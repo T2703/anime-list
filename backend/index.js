@@ -312,10 +312,19 @@ app.post('/addFavoriteAnime/:userId', async (req, res) => {
             { $addToSet: { favoriteAnimes: anime } }
         );
 
+        const userIdStuff = await db.collection('users').findOne(
+            { _id: new ObjectId(userId) },
+            { projection: { username: 1, profilePicture: 1 } }
+        );
+
         await db.collection('activities').insertOne({
             userId: new ObjectId(userId),
             type: 'addFavoriteAnime',
-            animeId: anime,
+            animeId: anime.id,
+            animeTitle: anime.title,
+            animeImage: anime.coverImage.medium,
+            mainName: userIdStuff.username,
+            mainPfp: userIdStuff.profilePicture,
             timestamp: new Date()
         });
 
@@ -368,14 +377,9 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
             });
         }
 
-        const result1 = await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },  // Ensure proper conversion to ObjectId
-            { $addToSet: { following: new ObjectId(targetUserId) } }
-        );
-
-        const result2 = await db.collection('users').updateOne(
+        const targetUser = await db.collection('users').findOne(
             { _id: new ObjectId(targetUserId) },
-            { $addToSet: { followers: new ObjectId(userId) } }
+            { projection: { isPrivate: 1 } }
         );
 
         const userIdStuff = await db.collection('users').findOne(
@@ -383,26 +387,97 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
             { projection: { username: 1, profilePicture: 1 } }
         );
 
+        if (!userIdStuff || !targetUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (targetUser.isPrivate) {
+            await db.collection('activities').insertOne({
+                userId: new ObjectId(userId),
+                type: 'followRequest',
+                targetUserId: new ObjectId(targetUserId),
+                mainName: userIdStuff.username,
+                mainPfp: userIdStuff.profilePicture,
+                timestamp: new Date()
+            });
+        } else {
+            const result1 = await db.collection('users').updateOne(
+                { _id: new ObjectId(userId) },  // Ensure proper conversion to ObjectId
+                { $addToSet: { following: new ObjectId(targetUserId) } }
+            );
+
+            const result2 = await db.collection('users').updateOne(
+                { _id: new ObjectId(targetUserId) },
+                { $addToSet: { followers: new ObjectId(userId) } }
+            );
+
+            await db.collection('activities').insertOne({
+                userId: new ObjectId(userId),
+                type: 'follow',
+                targetUserId: new ObjectId(targetUserId),
+                mainName: userIdStuff.username,
+                mainPfp: userIdStuff.profilePicture,
+                timestamp: new Date()
+            });
+
+            if (result1.modifiedCount === 0 || result2.modifiedCount === 0) {
+                return res.status(400).json({ message: "User not found or no changes were made" });
+            }
+        }
+
+        res.status(200).json({
+            message: targetUser.isPrivate ? "Follow request sent successfully" : "User followed successfully"
+        });
+
+    } catch (error) {
+        console.error("Error following user: ", error);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
+app.post('/acceptFollowRequest/:requestId', authMiddleware, async (req, res) => {
+    const requestId = req.params.requestId;
+
+    try {
+        const request = await db.collection('activities').findOne({ _id: new ObjectId(requestId) });
+
+        if (!request || request.type !== 'followRequest') {
+            return res.status(404).json({ message: "Follow request not found" });
+        }
+
+        const result1 = await db.collection('users').updateOne(
+            { _id: new ObjectId(request.userId) },
+            { $addToSet: { following: new ObjectId(request.targetUserId) } }
+        );
+
+        const result2 = await db.collection('users').updateOne(
+            { _id: new ObjectId(request.targetUserId) },
+            { $addToSet: { followers: new ObjectId(request.userId) } }
+        );
 
         await db.collection('activities').insertOne({
-            userId: new ObjectId(userId),
+            userId: new ObjectId(request.userId),
             type: 'follow',
-            targetUserId: new ObjectId(targetUserId),
-            mainName: userIdStuff.username,
-            mainPfp: userIdStuff.profilePicture,
+            targetUserId: new ObjectId(request.targetUserId),
+            mainName: request.mainName,
+            mainPfp: request.mainPfp,
             timestamp: new Date()
         });
+
+        await db.collection('activities').deleteOne({ _id: new ObjectId(requestId) });
 
         if (result1.modifiedCount === 0 || result2.modifiedCount === 0) {
             return res.status(400).json({ message: "User not found or no changes were made" });
         }
 
         res.status(200).json({
-            message: "User followed successfully"
+            message: "Follow request accepted successfully"
         });
 
     } catch (error) {
-        console.error("Error following user: ", error);
+        console.error("Error accepting follow request: ", error);
         res.status(500).json({
             message: "Internal Server Error"
         });

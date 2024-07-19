@@ -8,6 +8,7 @@ function Profile() {
     const [username, setUsername] = useState('');
     const [followingCount, setFollowingCount] = useState(0);
     const [followerCount, setFollowerCount] = useState(0);
+    const [followers, setFollowers] = useState([]);
     const [profilePicture, setProfilePicture] = useState('');
     const [bio, setBio] = useState('');
     const [favoriteAnimes, setFavoriteAnimes] = useState([]);
@@ -68,6 +69,7 @@ function Profile() {
           setProfilePicture(data.profilePicture);
           setFollowingCount(data.following.length);
           setFollowerCount(data.followers.length);
+          setFollowers(data.followers);
           setBio(data.bio);
           setIsPrivate(data.isPrivate);
           console.log(data)
@@ -112,6 +114,8 @@ function Profile() {
         return title.includes(searchInput);
     });
 
+    const isFollower = followers.some(follower => follower === loggedUserId);
+    const isProfileOwner = loggedUserId === userId;
 
     return (
         <div>
@@ -122,7 +126,7 @@ function Profile() {
                         <div className="text-center">
                             <img src={profilePicture} className="profile-picture mb-4" alt="Profile" style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '50%' }} />
                             <h3>{username}</h3>
-                            {isPrivate && loggedUserId !== userId ? (
+                            {isPrivate && !isFollower ? (
                                 <div className="alert alert-info text-center">
                                     
                                 </div>
@@ -136,7 +140,7 @@ function Profile() {
                         </div>
                     </div>
                     <div className="col-md-8">
-                        {isPrivate && loggedUserId !== userId ? (
+                        {isPrivate && !isProfileOwner && !isFollower ? (
                             <div className="alert alert-info text-center">
                                 This profile is private.
                             </div>

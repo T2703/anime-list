@@ -6,6 +6,8 @@ import { jwtDecode } from "jwt-decode";
 
 function Social() {
   const [users, setUsers] = useState([]);
+  const [followedUsers, setFollowedUsers] = useState([]);
+  const [loggedInUser, setLoggedInUser] = useState(null);
   const navigate = useNavigate();
   const token = Cookies.get('token');
   const [searchInput, setSearchInput] = useState("");
@@ -27,9 +29,9 @@ function Social() {
         setUsers(data || []);
         console.log(data)
         
-        //const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
+        const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
     
-        //setFollowedUsers(followingUsers || []);
+        setFollowedUsers(followingUsers || []);
         //console.log(followedUsers)
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -40,6 +42,8 @@ useEffect(() => {
     if (!token) {
         navigate('/login'); 
     } else {
+        const decodedToken = jwtDecode(token);
+        setLoggedInUser(decodedToken.userId)
         fetchUsers();
     }
 }, [token]);
@@ -63,14 +67,14 @@ const handleFollow = async (targetUserId) => {
             }
         });
 
-        /*setUsers(prevUsers => {
+        setUsers(prevUsers => {
             return prevUsers.map(user => {
                 if (user._id === targetUserId) {
                     return { ...user, followers: [...user.followers, loggedInUser] };
                 }
                 return user;
             });
-        });*/
+        });
 
         console.log(response)
 
@@ -95,14 +99,14 @@ const handleUnfollow = async (targetUserId) => {
             }
         });
 
-        /*setUsers(prevUsers => {
+        setUsers(prevUsers => {
             return prevUsers.map(user => {
                 if (user._id === targetUserId) {
                     return { ...user, followers: user.followers.filter(id => id !== loggedInUser) };
                 }
                 return user;
             });
-        });*/
+        });
 
         if (response.ok) {
             console.log('User unfollowed successfully');
@@ -143,8 +147,17 @@ return (
                                     style={{ height: "200px", width: "200px", objectFit: "cover" }}
                                     onClick={() => navigate(`/profile/${user._id}`)}
                                 />
-                                <button className="btn btn-primary ml-2" onClick={() => handleFollow(user._id)}>Follow</button>
-                                <button className="btn btn-primary ml-2" onClick={() => handleUnfollow(user._id)}>unfollow</button>
+                                {user._id !== loggedInUser ? (
+                                    <div style={{ display: "flex", justifyContent: "center" }}>
+                                        <button
+                                            className={`btn ${user.followers.includes(loggedInUser) ? "btn-danger" : "btn-success"}`}
+                                            onClick={() => user.followers.includes(loggedInUser) ? handleUnfollow(user._id) : handleFollow(user._id)}
+                                            style={{ width: "100px", marginTop: "10px" }}
+                                        >
+                                            {user.followers.includes(loggedInUser) ? "Unfollow" : "Follow"}
+                                        </button>
+                                    </div>
+                                ) : null}
                             </div>
                             <div className="card-body text-center">
                             </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
-
+import { formatDistanceToNow } from 'date-fns';
 
 function Homepage() {
     const [username, setUsername] = useState('');
@@ -43,6 +43,27 @@ function Homepage() {
         }
     };
 
+    const acceptRequestCall = async (requestId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/acceptFollowRequest/${requestId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
+            if (response.ok) {
+                console.log('Follow request accepted successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Error accepting follow request:', errorData.message || 'Failed to accept follow request');
+            }
+        } catch (error) {
+            console.error('Error accepting follow request:', error);
+        }
+    };
+
     useEffect(() => {
         if (!token) {
             navigate('/login'); 
@@ -70,48 +91,61 @@ function Homepage() {
         return <div><Navbar /> Error: {error.message}</div>;
     }
 
-    const handleSearchChange = (e) => {
-        const inputValue = e.target.value.toLowerCase();
-        setSearchInput(inputValue);
-    };
-
-    const filteredActivities = activityFeed.filter((activity) => {
-        // Add any specific filtering logic for activity feed if needed
-        return true;
-    });
-
     return (
         <div>
             <Navbar />
             <div className="container">
-                <div className="searchBar my-2 d-flex justify-content-center">
-                    <div className="input-group" style={{ maxWidth: '300px' }}>
-                        <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Search"
-                            onChange={handleSearchChange}
-                            value={searchInput}
-                        />
-                    </div>
-                </div>
                 <div className="row">
-                    {filteredActivities.length > 0 ? (
-                        filteredActivities.map(activity => (
+                    {activityFeed.length > 0 ? (
+                        activityFeed.map(activity => (
                             <div className="col-md-12 mb-4" key={activity._id}>
                                 <div className="card">
                                     <div className="card-body">
-                                        <p className="card-text">{activity.userId} performed {activity.type}</p>
                                         {activity.type === 'addFavoriteAnime' && (
-                                            <p>Added Anime: {activity.animeId}</p>
+                                            <>
+                                                <img
+                                                    src={activity.mainPfp}
+                                                    className="profile-picture mb-4"
+                                                    alt="Profile"
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
+                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
+                                                />
+                                                <p>{activity.mainName} has added: {activity.animeTitle.english} to their favorites.</p>
+                                                <img
+                                                    src={activity.animeImage}
+                                                    className="profile-picture mb-4"
+                                                    alt="Anime Cover"
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
+                                                    onClick={() => navigate(`/animeinfo/${activity.animeId.id}`)}
+                                                />
+                                            </>
                                         )}
                                         {activity.type === 'follow' && (
                                             <>
-                                                <img src={activity.mainPfp} className="profile-picture mb-4" alt="Profile" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }} />
+                                                <img
+                                                    src={activity.mainPfp}
+                                                    className="profile-picture mb-4"
+                                                    alt="Profile"
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
+                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
+                                                />
                                                 <p>{activity.mainName} has followed you.</p>
                                             </>
                                         )}
-                                        <p>{new Date(activity.timestamp).toLocaleString()}</p>
+                                        {activity.type === 'followRequest' && (
+                                            <>
+                                                <img
+                                                    src={activity.mainPfp}
+                                                    className="profile-picture mb-4"
+                                                    alt="Profile"
+                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
+                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
+                                                />
+                                                <p>{activity.mainName} has requested to followed you.</p>
+                                                <button className="btn btn-primary" onClick={() => acceptRequestCall(activity._id)}>accept</button>
+                                            </>
+                                        )}
+                                        <p>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</p>
                                     </div>
                                 </div>
                             </div>
