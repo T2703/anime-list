@@ -19,6 +19,8 @@ function Profile() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [isPrivate, setIsPrivate] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
     const token = Cookies.get('token');
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -117,6 +119,15 @@ function Profile() {
     const isFollower = followers.some(follower => follower === loggedUserId);
     const isProfileOwner = loggedUserId === userId;
 
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredFavoriteAnimes.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredFavoriteAnimes.length / itemsPerPage);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
     return (
         <div>
             <Navbar />
@@ -126,10 +137,8 @@ function Profile() {
                         <div className="text-center">
                             <img src={profilePicture} className="profile-picture mb-4" alt="Profile" style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '50%' }} />
                             <h3>{username}</h3>
-                            {isPrivate && !isFollower ? (
-                                <div className="alert alert-info text-center">
-                                    
-                                </div>
+                            {isPrivate && !isProfileOwner && !isFollower  ? (
+                                <div className="alert alert-info text-center"></div>
                             ) : (
                                 <>
                                     <p>{bio}</p>
@@ -158,8 +167,8 @@ function Profile() {
                                     </div>
                                 </div>
                                 <div className="row">
-                                    {filteredFavoriteAnimes.length > 0 ? (
-                                        filteredFavoriteAnimes.map(anime => (
+                                    {currentItems.length > 0 ? (
+                                        currentItems.map(anime => (
                                             <div className="col-md-6 mb-4" key={anime.id}>
                                                 <div className="card">
                                                     <h5 className="card-title text-center">{anime.title.english || anime.title.romaji}</h5>
@@ -173,6 +182,17 @@ function Profile() {
                                     ) : (
                                         <p className="text-center">No anime found.</p>
                                     )}
+                                </div>
+                                <div className="pagination d-flex justify-content-center mt-3">
+                                    {Array.from({ length: totalPages }, (_, index) => (
+                                        <button
+                                            key={index + 1}
+                                            className={`btn btn-primary mx-1 ${currentPage === index + 1 ? 'active' : ''}`}
+                                            onClick={() => handlePageChange(index + 1)}
+                                        >
+                                            {index + 1}
+                                        </button>
+                                    ))}
                                 </div>
                             </>
                         )}

@@ -11,6 +11,9 @@ function Social() {
   const navigate = useNavigate();
   const token = Cookies.get('token');
   const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
   const fetchUsers = async () => {
     try {
@@ -48,13 +51,9 @@ useEffect(() => {
     }
 }, [token]);
 
-const handleSearchChange = (e) => {
-    const inputValue = e.target.value.toLowerCase();
-    setSearchInput(inputValue);
-}
 
 const filteredUsers = users.filter((user) => {
-    return user.username.toLowerCase().includes(searchInput);
+    return user.username.toLowerCase().includes(searchQuery.toLowerCase());
 });
 
 const handleFollow = async (targetUserId) => {
@@ -119,35 +118,69 @@ const handleUnfollow = async (targetUserId) => {
     }
 };
 
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+const handleSearchChange = (e) => {
+    //const inputValue = e.target.value.toLowerCase();
+    setSearchInput(e.target.value.toLowerCase());
+    //setCurrentPage(1);
+}
+
+const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+    }
+};
+
+const handlePreviousPage = () => {
+    handlePageChange(currentPage - 1);
+};
+
+const handleNextPage = () => {
+    handlePageChange(currentPage + 1);
+};
+
+const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setSearchQuery(searchInput);
+    fetchUsers(searchInput);
+    //localStorage.setItem('searchInput', searchInput);
+};
+
 return (
     <div className="App">
         <Navbar />
         <div>
-            <div className="row m-0">
-                <div className="searchBar my-2 d-flex justify-content-center">
-                    <div className="input-group" style={{ maxWidth: '300px' }}>
-                        <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Search for users"
-                            onChange={handleSearchChange}
-                            value={searchInput}
-                        />
-                    </div>
+            <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
+                <div className="input-group" style={{ maxWidth: '300px' }}>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search for users"
+                        onChange={handleSearchChange}
+                        value={searchInput}
+                    />
+                    <button type="submit" className="btn btn-primary">Search</button>
                 </div>
-                {filteredUsers.map(user => (
-                    <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
-                        <div className="card recipe-card" style={{ maxWidth: "360px" }}>
-                            <h5 className="card-title text-center">{user.username}</h5>
-                            <div className="profile-picture-container d-flex justify-content-center align-items-center">
-                                <img
-                                    src={user.profilePicture}
-                                    className="card-img-top img-fluid rounded-circle"
-                                    alt={user.username}
-                                    style={{ height: "200px", width: "200px", objectFit: "cover" }}
-                                    onClick={() => navigate(`/profile/${user._id}`)}
-                                />
-                                {user._id !== loggedInUser ? (
+            </form>
+            <div className="row m-0">
+                {currentItems.length > 0 ? (
+                    currentItems.map(user => (
+                        <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div className="card recipe-card" style={{ maxWidth: "360px" }}>
+                                <h5 className="card-title text-center">{user.username}</h5>
+                                <div className="profile-picture-container d-flex justify-content-center align-items-center">
+                                    <img
+                                        src={user.profilePicture}
+                                        className="card-img-top img-fluid rounded-circle"
+                                        alt={user.username}
+                                        style={{ height: "200px", width: "200px", objectFit: "cover" }}
+                                        onClick={() => navigate(`/profile/${user._id}`)}
+                                    />
                                     <div style={{ display: "flex", justifyContent: "center" }}>
                                         <button
                                             className={`btn ${user.followers.includes(loggedInUser) ? "btn-danger" : "btn-success"}`}
@@ -157,13 +190,30 @@ return (
                                             {user.followers.includes(loggedInUser) ? "Unfollow" : "Follow"}
                                         </button>
                                     </div>
-                                ) : null}
-                            </div>
-                            <div className="card-body text-center">
+                                </div>
+                                <div className="card-body text-center"></div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                ) : (
+                    <p>No users found.</p>
+                )}
+                <div className="pagination d-flex justify-content-center mt-3">
+                    <button
+                        className="btn btn-primary mx-1"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    <button
+                        className="btn btn-primary mx-1"
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     </div>

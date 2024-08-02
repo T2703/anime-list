@@ -203,10 +203,17 @@ app.get('/activityFeed/:userId', async (req, res) => {
         }
 
         const followingIDs = user.following || [];
+        const userObjectId = new ObjectId(userId);
 
-        // Fetching activities related to the user
+        // Fetching activities where the user is either following someone or is the target of a follow
         const activities = await db.collection('activities')
-            .find({ userId: { $in: followingIDs.map(id => new ObjectId(id)) } })
+            .find({
+                $or: [
+                    { userId: { $in: followingIDs.map(id => new ObjectId(id)) } },
+                    { targetUserId: userObjectId, type: 'follow' },
+                    { targetUserId: userObjectId, type: 'followRequest' }
+                ]
+            })
             .sort({ timestamp: -1 }) // Sorting by latest activities first
             .toArray();
         
@@ -478,6 +485,28 @@ app.post('/acceptFollowRequest/:requestId', authMiddleware, async (req, res) => 
 
     } catch (error) {
         console.error("Error accepting follow request: ", error);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
+app.post('/rejectFollowRequest/:requestId', authMiddleware, async (req, res) => {
+    const requestId = req.params.requestId;
+
+    try {
+        const result = await db.collection('activities').deleteOne({ _id: new ObjectId(requestId) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "Follow request not found" });
+        }
+
+        res.status(200).json({
+            message: "Follow request rejected successfully"
+        });
+
+    } catch (error) {
+        console.error("Error rejecting follow request: ", error);
         res.status(500).json({
             message: "Internal Server Error"
         });
