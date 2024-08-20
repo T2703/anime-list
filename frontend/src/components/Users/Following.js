@@ -12,6 +12,9 @@ function Following() {
   const navigate = useNavigate();
   const token = Cookies.get('token');
   const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
   const fetchFollowing = async (userId) => {
     try {
@@ -51,13 +54,40 @@ useEffect(() => {
 }, [token, navigate]);
 
 const handleSearchChange = (e) => {
-    const inputValue = e.target.value.toLowerCase();
-    setSearchInput(inputValue);
+    //const inputValue = e.target.value.toLowerCase();
+    setSearchInput(e.target.value.toLowerCase());
+    //setCurrentPage(1);
 }
 
 const filteredUsers = users.filter((user) => {
-    return user.username.toLowerCase().includes(searchInput);
+    return user.username.toLowerCase().includes(searchQuery.toLowerCase());
 });
+
+const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+    }
+};
+
+const handlePreviousPage = () => {
+    handlePageChange(currentPage - 1);
+};
+
+const handleNextPage = () => {
+    handlePageChange(currentPage + 1);
+};
+
+const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setSearchQuery(searchInput);
+};
+
+
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
 const handleFollow = async (targetUserId) => {
     try {
@@ -126,7 +156,7 @@ return (
         <Navbar />
         <div>
             <div className="row m-0">
-                <div className="searchBar my-2 d-flex justify-content-center">
+                <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
                     <div className="input-group" style={{ maxWidth: '300px' }}>
                         <input
                             type="text"
@@ -135,9 +165,10 @@ return (
                             onChange={handleSearchChange}
                             value={searchInput}
                         />
+                         <button type="submit" className="btn btn-primary">Search</button>
                     </div>
-                </div>
-                {filteredUsers.map(user => (
+                </form>
+                {currentItems.map(user => (
                     <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
                         <div className="card recipe-card" style={{ maxWidth: "360px" }}>
                             <h5 className="card-title text-center">{user.username}</h5>
@@ -166,6 +197,23 @@ return (
                     </div>
                 ))}
             </div>
+            <div className="pagination d-flex justify-content-center mt-3">
+                    <button
+                        className="btn btn-primary mx-1"
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    <button
+                        className="btn btn-primary mx-1"
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+
         </div>
     </div>
 );

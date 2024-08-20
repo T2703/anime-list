@@ -18,6 +18,7 @@ function Profile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState("");
     const [isPrivate, setIsPrivate] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
@@ -106,14 +107,10 @@ function Profile() {
         return <div><Navbar /> Error: {error.message}</div>;
     }
 
-    const handleSearchChange = (e) => {
-        const inputValue = e.target.value.toLowerCase();
-        setSearchInput(inputValue);
-    };
 
     const filteredFavoriteAnimes = favoriteAnimes.filter((anime) => {
         const title = (anime.title.english || anime.title.romaji).toLowerCase();
-        return title.includes(searchInput);
+        return title.includes(searchQuery);
     });
 
     const isFollower = followers.some(follower => follower === loggedUserId);
@@ -124,8 +121,29 @@ function Profile() {
     const currentItems = filteredFavoriteAnimes.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(filteredFavoriteAnimes.length / itemsPerPage);
 
+    const handleSearchChange = (e) => {
+        const inputValue = e.target.value.toLowerCase();
+        setSearchInput(inputValue);
+    };
+
     const handlePageChange = (page) => {
-        setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        handlePageChange(currentPage - 1);
+    };
+    
+    const handleNextPage = () => {
+        handlePageChange(currentPage + 1);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setCurrentPage(1);
+        setSearchQuery(searchInput);
     };
 
     return (
@@ -155,7 +173,7 @@ function Profile() {
                             </div>
                         ) : (
                             <>
-                                <div className="searchBar my-2 d-flex justify-content-center">
+                                <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
                                     <div className="input-group" style={{ maxWidth: '400px' }}>
                                         <input
                                             type="text"
@@ -164,8 +182,9 @@ function Profile() {
                                             onChange={handleSearchChange}
                                             value={searchInput}
                                         />
+                                        <button type="submit" className="btn btn-primary">Search</button>
                                     </div>
-                                </div>
+                                </form>
                                 <div className="row">
                                     {currentItems.length > 0 ? (
                                         currentItems.map(anime => (
@@ -184,15 +203,20 @@ function Profile() {
                                     )}
                                 </div>
                                 <div className="pagination d-flex justify-content-center mt-3">
-                                    {Array.from({ length: totalPages }, (_, index) => (
-                                        <button
-                                            key={index + 1}
-                                            className={`btn btn-primary mx-1 ${currentPage === index + 1 ? 'active' : ''}`}
-                                            onClick={() => handlePageChange(index + 1)}
-                                        >
-                                            {index + 1}
-                                        </button>
-                                    ))}
+                                    <button
+                                        className="btn btn-primary mx-1"
+                                        onClick={handlePreviousPage}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        className="btn btn-primary mx-1"
+                                        onClick={handleNextPage}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </>
                         )}
