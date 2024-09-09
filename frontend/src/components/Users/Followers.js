@@ -8,6 +8,7 @@ function Followers() {
   const [users, setUsers] = useState([]);
   const [following, setFollowing] = useState([]); 
   const [loggedInUser, setLoggedInUser] = useState(null);
+  const [requestedUsers, setRequestedUsers] = useState([]);
   const { userId } = useParams();
   const navigate = useNavigate();
   const token = Cookies.get('token');
@@ -15,6 +16,28 @@ function Followers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
+
+  const fetchRequestedUsers = async () => {
+    try {
+        const response = await fetch('http://localhost:8081/allUsers', {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        const requestedUsers = data.filter(user => user.pendingRequests && user.pendingRequests.includes(loggedInUser));
+        
+        setRequestedUsers(requestedUsers || []);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+};
 
   const fetchFollowers = async (userId) => {
     try {
@@ -44,7 +67,9 @@ useEffect(() => {
     } else {
         const decodedToken = jwtDecode(token);
         setLoggedInUser(decodedToken.userId);
+        console.log(decodedToken.userId);
         fetchFollowers(userId);
+        fetchRequestedUsers();
     }
 }, [token, navigate]);
 
@@ -88,6 +113,12 @@ const handleNextPage = () => {
 
 
 const handleFollow = async (targetUserId) => {
+  const userToFollow = users.find(user => user._id === targetUserId);
+
+  if (userToFollow.isPrivate) {
+      alert("A request has been sent.");
+  }
+
     try {
         const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
             method: 'POST',
@@ -97,14 +128,15 @@ const handleFollow = async (targetUserId) => {
             }
         });
 
-        setUsers(prevUsers => {
-            return prevUsers.map(user => {
-                if (user._id === targetUserId) {
-                    return { ...user, followers: [...user.followers, loggedInUser] };
-                }
-                return user;
-            });
-        });
+        setUsers(prevUsers => prevUsers.map(user => {
+          if (user._id === targetUserId) {
+              return {
+                  ...user,
+                  pendingRequests: [...(user.pendingRequests || []), loggedInUser] 
+              };
+          }
+          return user;
+      }));
 
         console.log(response)
 
@@ -125,18 +157,18 @@ const handleUnfollow = async (targetUserId) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // Include the user's JWT token for authentication
+                'Authorization': `Bearer ${token}`
             }
         });
 
         setUsers(prevUsers => {
-            return prevUsers.map(user => {
-                if (user._id === targetUserId) {
-                    return { ...user, followers: user.followers.filter(id => id !== loggedInUser) };
-                }
-                return user;
-            });
-        });
+          return prevUsers.map(user => {
+              if (user._id === targetUserId) {
+                  return { ...user, followers: user.followers.filter(id => id !== loggedInUser) };
+              }
+              return user;
+          });
+      });
 
         if (response.ok) {
             console.log('User unfollowed successfully');
@@ -150,23 +182,24 @@ const handleUnfollow = async (targetUserId) => {
 };
 
 return (
-    <div className="App">
-      <Navbar />
-      <div>
-        <div className="row m-0">
-          <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
-            <div className="input-group" style={{ maxWidth: '300px' }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search for users"
-                onChange={handleSearchChange}
-                value={searchInput}
-              />
-              <button type="submit" className="btn btn-primary">Search</button>
-            </div>
-          </form>
-          {currentItems.map(user => (
+  <div className="App">
+    <Navbar />
+    <div>
+      <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
+        <div className="input-group" style={{ maxWidth: '300px' }}>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search for users"
+            onChange={handleSearchChange}
+            value={searchInput}
+          />
+          <button type="submit" className="btn btn-primary">Search</button>
+        </div>
+      </form>
+      <div className="row m-0">
+        {currentItems.length > 0 ? (
+          currentItems.map(user => (
             <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
               <div className="card recipe-card" style={{ maxWidth: "360px" }}>
                 <h5 className="card-title text-center">{user.username}</h5>
@@ -176,44 +209,65 @@ return (
                     className="card-img-top img-fluid rounded-circle"
                     alt={user.username}
                     style={{ height: "200px", width: "200px", objectFit: "cover" }}
+                    onClick={() => navigate(`/profile/${user._id}`)}
                   />
                   {user._id !== loggedInUser ? (
                     <div style={{ display: "flex", justifyContent: "center" }}>
-                      <button
-                        className={`btn ${user.followers.includes(loggedInUser) ? "btn-danger" : "btn-success"}`}
-                        onClick={() => user.followers.includes(loggedInUser) ? handleUnfollow(user._id) : handleFollow(user._id)}
-                        style={{ width: "100px", marginTop: "10px" }}
-                      >
-                        {user.followers.includes(loggedInUser) ? "Unfollow" : "Follow"}
-                      </button>
+                      {user.followers.includes(loggedInUser) ? (
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => handleUnfollow(user._id)}
+                          style={{ width: "100px", marginTop: "10px" }}
+                        >
+                          Unfollow
+                        </button>
+                      ) : user.pendingRequests && user.pendingRequests.includes(loggedInUser) ? (
+                        <button
+                          className="btn btn-secondary"
+                          style={{ width: "100px", marginTop: "10px" }}
+                          disabled
+                        >
+                          Requested
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-success"
+                          onClick={() => handleFollow(user._id)}
+                          style={{ width: "100px", marginTop: "10px" }}
+                        >
+                          Follow
+                        </button>
+                      )}
                     </div>
                   ) : null}
                 </div>
-                <div className="card-body text-center">
-                </div>
+                <div className="card-body text-center"></div>
               </div>
             </div>
-          ))}
-          <div className="pagination d-flex justify-content-center mt-3">
-            <button
-              className="btn btn-primary mx-1"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <button
-              className="btn btn-primary mx-1"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+          ))
+        ) : (
+          <p>No users found.</p>
+        )}
+        <div className="pagination d-flex justify-content-center mt-3">
+          <button
+            className="btn btn-primary mx-1"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          <button
+            className="btn btn-primary mx-1"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default Followers;

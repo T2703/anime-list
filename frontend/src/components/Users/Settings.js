@@ -174,6 +174,7 @@ function Settings() {
                                         className="form-control"
                                         id="newPFP"
                                         onChange={(e) => setNewPFP(e.target.files[0])}
+                                        accept="image/png, image/jpeg"
                                     />
                                 </div>
                                 <div className="form-group mb-3">

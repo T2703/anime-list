@@ -207,15 +207,17 @@ app.get('/activityFeed/:userId', async (req, res) => {
 
         // Fetching activities where the user is either following someone or is the target of a follow
         const activities = await db.collection('activities')
-            .find({
-                $or: [
-                    { userId: { $in: followingIDs.map(id => new ObjectId(id)) } },
-                    { targetUserId: userObjectId, type: 'follow' },
-                    { targetUserId: userObjectId, type: 'followRequest' }
-                ]
-            })
-            .sort({ timestamp: -1 }) // Sorting by latest activities first
-            .toArray();
+        .find({
+            $or: [
+                // Fetch follow and follow request activities for the logged-in user
+                { targetUserId: userObjectId, type: { $in: ['follow', 'followRequest'] } },
+                
+                // Fetch 'addFavoriteAnime' activities from users that the logged-in user follows
+                { userId: { $in: followingIDs.map(id => new ObjectId(id)) }, type: 'addFavoriteAnime' }
+            ]
+        })
+        .sort({ timestamp: -1 }) // Sorting by most recent activities
+        .toArray();
         
         console.log(followingIDs);
         console.log(activities);
@@ -295,6 +297,7 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
             favoriteAnimes: favoriteAnimes || [],
             followers: [],
             following: [],
+            pendingRequests: [],
             isPrivate: false,
             password: hashedPassword // Store the hashed password
         });
@@ -399,6 +402,21 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
         }
 
         if (targetUser.isPrivate) {
+            const existingRequest = await db.collection('activities').findOne({
+                userId: new ObjectId(userId),
+                targetUserId: new ObjectId(targetUserId),
+                type: 'followRequest'
+            });
+
+            const pending = await db.collection('users').updateOne(
+                { _id: new ObjectId(targetUserId) },
+                { $addToSet: { pendingRequests: new ObjectId(userId) } }
+            );
+
+            if (existingRequest) {
+                return res.status(400).json({ message: "Follow request has already been sent."})
+            }
+
             await db.collection('activities').insertOne({
                 userId: new ObjectId(userId),
                 type: 'followRequest',
@@ -410,7 +428,7 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
         } else {
             const result1 = await db.collection('users').updateOne(
                 { _id: new ObjectId(userId) },  // Ensure proper conversion to ObjectId
-                { $addToSet: { following: new ObjectId(targetUserId) } }
+                { $addToSet: { following: new ObjectId(targetUserId) } },
             );
 
             const result2 = await db.collection('users').updateOne(
@@ -463,6 +481,17 @@ app.post('/acceptFollowRequest/:requestId', authMiddleware, async (req, res) => 
             { _id: new ObjectId(request.targetUserId) },
             { $addToSet: { followers: new ObjectId(request.userId) } }
         );
+
+        const removePending = await db.collection('users').updateOne(
+            { _id: new ObjectId(request.targetUserId) },
+            { $pull: { pendingRequests: new ObjectId(request.userId) } }
+        );
+
+        console.log("User ID:", request.userId);
+        console.log("Target User ID:", request.targetUserId);
+
+        console.log("Result 1:", result1);
+        console.log("Result 2:", result2);
 
         await db.collection('activities').insertOne({
             userId: new ObjectId(request.userId),
@@ -561,11 +590,35 @@ app.put('/updateAccount/:userId', authMiddleware, upload.single('profilePic'), a
         const userObjectId = new ObjectId(userId);
 
         const updateFields = {};
+        const currentUser = await db.collection('users').findOne({ _id: userObjectId });
+        if (!currentUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
         if (username) updateFields.username = username;
         if (email) updateFields.email = email;
         if (bio) updateFields.bio = bio;
         if (profilePicture) updateFields.profilePicture = profilePicture;
         if (typeof isPrivate !== 'undefined') updateFields.isPrivate = isPrivate === 'true';
+
+        if (profilePicture) {
+            if (currentUser.profilePicture) {
+                const oldFilePath = path.join(__dirname, 'images', path.basename(currentUser.profilePicture));
+                fs.unlink(oldFilePath, (err) => {
+                    if (err) console.error("Error deleting old profile picture: ", err);
+                });
+            }
+            updateFields.profilePicture = profilePicture;
+        }
+
+        if (!isPrivate) {
+            const removeAllPending = await db.collection('users').updateOne(
+                { _id: new ObjectId(request.userId) },
+                { $set: { pendingRequests: [] } } 
+            );
+
+            const removeAllActivites = await db.collection('activities').deleteMany({ type: "followRequest" });
+        }
 
         const result = await db.collection('users').updateOne(
             { _id: userObjectId },

@@ -29,6 +29,8 @@ function Homepage() {
     
             if (response.ok) {
                 setActivityFeed(data.activities);
+                console.log(userId);
+                console.log(activityFeed);
                 setLoading(false);
             } else {
                 alert(data.message || 'Error fetching activity feed');
@@ -55,6 +57,9 @@ function Homepage() {
     
             if (response.ok) {
                 console.log('Follow request accepted successfully');
+                setActivityFeed(prevActivities =>
+                    prevActivities.filter(activity => activity._id !== requestId)
+                );
             } else {
                 const errorData = await response.json();
                 console.error('Error accepting follow request:', errorData.message || 'Failed to accept follow request');
@@ -116,7 +121,7 @@ function Homepage() {
                                                     className="profile-picture mb-4"
                                                     alt="Anime Cover"
                                                     style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
-                                                    onClick={() => navigate(`/animeinfo/${activity.animeId.id}`)}
+                                                    onClick={() => navigate(`/animeinfo/${activity.animeId}`)}
                                                 />
                                             </>
                                         )}
