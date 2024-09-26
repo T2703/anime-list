@@ -69,6 +69,33 @@ function Homepage() {
         }
     };
 
+
+    const rejectedRequestCall = async (requestId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/rejectFollowRequest/${requestId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
+            if (response.ok) {
+                console.log('Follow request rejected successfully');
+                setActivityFeed(prevActivities =>
+                    prevActivities.filter(activity => activity._id !== requestId)
+                );
+            } else {
+                const errorData = await response.json();
+                console.error('Error rejecting follow request:', errorData.message || 'Failed to accept follow request');
+            }
+        } catch (error) {
+            console.error('Error rejecting follow request:', error);
+        }
+    };
+
+    
+
     useEffect(() => {
         if (!token) {
             navigate('/login'); 
@@ -148,6 +175,7 @@ function Homepage() {
                                                 />
                                                 <p>{activity.mainName} has requested to followed you.</p>
                                                 <button className="btn btn-primary" onClick={() => acceptRequestCall(activity._id)}>accept</button>
+                                                <button className="btn btn-primary" onClick={() => rejectedRequestCall(activity._id)}>decline</button>
                                             </>
                                         )}
                                         <p>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</p>

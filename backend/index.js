@@ -524,11 +524,17 @@ app.post('/rejectFollowRequest/:requestId', authMiddleware, async (req, res) => 
     const requestId = req.params.requestId;
 
     try {
+        const request = await db.collection('activities').findOne({ _id: new ObjectId(requestId) });
         const result = await db.collection('activities').deleteOne({ _id: new ObjectId(requestId) });
 
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: "Follow request not found" });
         }
+
+        const removePending = await db.collection('users').updateOne(
+            { _id: new ObjectId(request.targetUserId) },
+            { $pull: { pendingRequests: new ObjectId(request.userId) } }
+        );
 
         res.status(200).json({
             message: "Follow request rejected successfully"
