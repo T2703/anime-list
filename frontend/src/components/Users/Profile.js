@@ -6,9 +6,12 @@ import { jwtDecode } from "jwt-decode";
 
 function Profile() {
     const [username, setUsername] = useState('');
+    const [users, setUsers] = useState([]);
     const [followingCount, setFollowingCount] = useState(0);
     const [followerCount, setFollowerCount] = useState(0);
     const [followers, setFollowers] = useState([]);
+    const [followedUsers, setFollowedUsers] = useState([]);
+    const [requestedUsers, setRequestedUsers] = useState([]);
     const [profilePicture, setProfilePicture] = useState('');
     const [bio, setBio] = useState('');
     const [favoriteAnimes, setFavoriteAnimes] = useState([]);
@@ -77,10 +80,11 @@ function Profile() {
           setIsPrivate(data.isPrivate);
           console.log(data)
           
-          //const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
-      
-          //setFollowedUsers(followingUsers || []);
-          //console.log(followedUsers)
+          const isFollowingUser = data.followers.includes(loggedUserId);
+          const hasSentFollowRequest = data.pendingRequests && data.pendingRequests.includes(loggedUserId);
+    
+          setFollowedUsers(isFollowingUser ? [data] : []);
+          setRequestedUsers(hasSentFollowRequest ? [data] : []);
       } catch (error) {
           console.error('Error fetching data:', error);
       }
@@ -97,7 +101,7 @@ function Profile() {
             const userIdFromToken = decodedToken.userId;
             setLoggedUserId(userIdFromToken);
         }
-    }, [token, navigate]);
+    }, [token, navigate, users]);
 
     if (loading) {
         return <div><Navbar /> Loading...</div>;
@@ -115,6 +119,74 @@ function Profile() {
 
     const isFollower = followers.some(follower => follower === loggedUserId);
     const isProfileOwner = loggedUserId === userId;
+
+    const handleFollow = async (targetUserId) => {
+        const userToFollow = users.find(user => user._id === targetUserId);
+        
+
+        if (targetUserId.isPrivate) {
+            alert("A request has been sent.");
+        }
+      
+        try {
+            const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+      
+            if (response.ok) {
+                setUsers(prevUsers => prevUsers.map(user => {
+                    if (user._id === targetUserId) {
+                        return {
+                            ...user,
+                            pendingRequests: [...(user.pendingRequests || []), loggedUserId] 
+                        };
+                    }
+                    return user;
+                }));
+      
+                console.log('User followed successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Follow user error:', errorData.message || 'Failed to follow user');
+            }
+        } catch (error) {
+            console.error('Error following user:', error);
+        }
+      };
+
+    const handleUnfollow = async (targetUserId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Include the user's JWT token for authentication
+                }
+            });
+    
+            setUsers(prevUsers => {
+                return prevUsers.map(user => {
+                    if (user._id === targetUserId) {
+                        return { ...user, followers: user.followers.filter(id => id !== loggedUserId) };
+                    }
+                    return user;
+                });
+            });
+    
+            if (response.ok) {
+                console.log('User unfollowed successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Unfollow user error:', errorData.message || 'Failed to unfollow user');
+            }
+        } catch (error) {
+            console.error('Error unfollowing user:', error);
+        }
+    };
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -165,6 +237,29 @@ function Profile() {
                                 </>
                             )}
                         </div>
+                        {!isProfileOwner && (
+                <>
+                    {isFollower ? (
+                        <button 
+                            className="btn btn-danger" 
+                            onClick={() => handleUnfollow(userId)}
+                        >
+                            Unfollow
+                        </button>
+                    ) : requestedUsers.some(user => user._id === userId) ? (
+                        <button className="btn btn-secondary" disabled>
+                            Request Sent
+                        </button>
+                    ) : (
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => handleFollow(userId)}
+                        >
+                            Follow
+                        </button>
+                    )}
+                </>
+            )}
                     </div>
                     <div className="col-md-8">
                         {isPrivate && !isProfileOwner && !isFollower ? (

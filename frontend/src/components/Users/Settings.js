@@ -45,9 +45,10 @@ function Settings() {
             setIsPrivate(data.isPrivate);
             console.log(isPrivate)
 
-            /*setUsername(data.username);
-            setProfilePicture(data.profilePicture);
-            setBio(data.bio);*/
+            setNewUsername(data.username);
+            //setProfilePicture(data.profilePicture);
+            setNewEmail(data.email);
+            setNewBio(data.bio);
         
         } catch (error) {
             console.error('Error fetching data:', error);
