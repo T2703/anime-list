@@ -9,6 +9,7 @@ function Social() {
   const [followedUsers, setFollowedUsers] = useState([]);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [requestedUsers, setRequestedUsers] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const navigate = useNavigate();
   const token = Cookies.get('token');
   const [searchInput, setSearchInput] = useState("");
@@ -30,16 +31,22 @@ function Social() {
         }
         
         const data = await response.json();
-        const filteredData = data.filter(user => user._id !== loggedInUser);
+        const filteredData = data.filter(user => 
+          user._id !== loggedInUser && 
+          !(user.blockedUsers && user.blockedUsers.includes(loggedInUser))
+      );
         setUsers(filteredData || []);
         console.log(data)
         
+        // Voodoo
         const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
         const requestedUsers = data.filter(user => user.pendingRequests && user.pendingRequests.includes(loggedInUser));
-        
+        const blockedUsers = data.filter(user => user.blockedUsers && user.blockedUsers.includes(loggedInUser));
+
         setFollowedUsers(followingUsers || []);
         setRequestedUsers(requestedUsers || []);
-        //console.log(followedUsers)
+        setBlockedUsers(blockedUsers || []);
+        console.log(blockedUsers)
     } catch (error) {
         console.error('Error fetching data:', error);
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, usehi } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
@@ -188,6 +188,31 @@ function Profile() {
         }
     };
 
+    const handleBlock = async (targetUserId) => {
+        const userToFollow = users.find(user => user._id === targetUserId);
+      
+        try {
+            const response = await fetch(`http://localhost:8081/block/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+      
+            if (response.ok) {
+                alert("You have blocked this user.");
+                navigate(-1);
+                console.log('User blocked successfully');
+            } else {
+                const errorData = await response.json();
+                console.error('Block user error:', errorData.message || 'Block to follow user');
+            }
+        } catch (error) {
+            console.error('Error block user:', error);
+        }
+      };
+
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredFavoriteAnimes.slice(indexOfFirstItem, indexOfLastItem);
@@ -258,6 +283,12 @@ function Profile() {
                             Follow
                         </button>
                     )}
+                <button
+                    className="btn btn-primary mx-1"
+                    onClick={() => handleBlock(userId)}
+                >
+                    Block
+                </button>
                 </>
             )}
                     </div>

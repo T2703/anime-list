@@ -298,6 +298,7 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
             followers: [],
             following: [],
             pendingRequests: [],
+            blockedUsers: [],
             isPrivate: false,
             password: hashedPassword // Store the hashed password
         });
@@ -462,6 +463,104 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
     }
 });
 
+app.post('/block/:targetUserId', authMiddleware, async (req, res) => {
+    const userId = req.user.userId;  // Ensure this matches the token payload structure
+    const targetUserId = req.params.targetUserId;
+
+    try {
+        // Check if the user is trying to block themselves
+        if (userId.toString() === targetUserId.toString()) {
+            return res.status(400).json({
+                message: "You cannot block yourself"
+            });
+        }
+
+        // Check if the target user exists
+        const targetUser = await db.collection('users').findOne(
+            { _id: new ObjectId(targetUserId) },
+            { projection: { isPrivate: 1 } }
+        );
+
+        if (!targetUser) {
+            return res.status(404).json({ message: "Target user not found" });
+        }
+
+        // Update the current user's blockedUsers array
+        const block = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $addToSet: { blockedUsers: new ObjectId(targetUserId) } }
+        );
+
+        const blockUserOnRecevingEnd = await db.collection('users').updateOne(
+            { _id: new ObjectId(targetUserId) },
+            { $addToSet: { blockedUsers: new ObjectId(userId) } }
+        );
+
+        if (!block.matchedCount) {
+            return res.status(404).json({ message: "Current user not found" });
+        }
+
+        res.status(200).json({
+            message: "User blocked successfully"
+        });
+
+    } catch (error) {
+        console.error("Error blocking user: ", error);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
+app.post('/unblock/:targetUserId', authMiddleware, async (req, res) => {
+    const userId = req.user.userId;  // Ensure this matches the token payload structure
+    const targetUserId = req.params.targetUserId;
+
+    try {
+        // Check if the user is trying to block themselves
+        if (userId.toString() === targetUserId.toString()) {
+            return res.status(400).json({
+                message: "You cannot unblock yourself"
+            });
+        }
+
+        // Check if the target user exists
+        const targetUser = await db.collection('users').findOne(
+            { _id: new ObjectId(targetUserId) },
+            { projection: { isPrivate: 1 } }
+        );
+
+        if (!targetUser) {
+            return res.status(404).json({ message: "Target user not found" });
+        }
+
+        // Update the current user's blockedUsers array
+        const block = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $pull: { blockedUsers: new ObjectId(targetUserId) } }
+        );
+
+        const blockUserOnRecevingEnd = await db.collection('users').updateOne(
+            { _id: new ObjectId(targetUserId) },
+            { $pull: { blockedUsers: new ObjectId(userId) } }
+        );
+
+        if (!block.matchedCount) {
+            return res.status(404).json({ message: "Current user not found" });
+        }
+
+        res.status(200).json({
+            message: "User unblocked successfully"
+        });
+
+    } catch (error) {
+        console.error("Error unblocking user: ", error);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
 app.post('/acceptFollowRequest/:requestId', authMiddleware, async (req, res) => {
     const requestId = req.params.requestId;
 
@@ -519,6 +618,7 @@ app.post('/acceptFollowRequest/:requestId', authMiddleware, async (req, res) => 
         });
     }
 });
+
 
 app.post('/rejectFollowRequest/:requestId', authMiddleware, async (req, res) => {
     const requestId = req.params.requestId;
@@ -597,8 +697,13 @@ app.put('/updateAccount/:userId', authMiddleware, upload.single('profilePic'), a
 
         const updateFields = {};
         const currentUser = await db.collection('users').findOne({ _id: userObjectId });
+        const existingUser = await db.collection('users').findOne({ email });
         if (!currentUser) {
             return res.status(404).json({ message: "User not found" });
+        }
+
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists" });
         }
 
         if (username) updateFields.username = username;
