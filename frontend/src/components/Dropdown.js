@@ -40,6 +40,9 @@ return (
       <li>
       <Link to={`/settings`}>Settings</Link>
       </li>
+      <li>
+      <Link to={`/blockedUsers/${userId}`}>Blocked Users</Link>
+      </li>
       <li onClick={handleLogout}>
         Logout
       </li>
