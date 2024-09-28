@@ -11,6 +11,7 @@ import Following from './Users/Following';
 import Followers from './Users/Followers';
 import Profile from './Users/Profile';
 import Settings from './Users/Settings';
+import BlockedUsers from './Users/BlockedUsers';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/followers/:userId" element={<Followers />} />
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/blockedUsers/:userId" element={<BlockedUsers />} />
       </Routes>
     </BrowserRouter>
   );

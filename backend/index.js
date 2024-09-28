@@ -190,6 +190,38 @@ app.get("/getFollowers/:userId", async (req, res) => {
     }
 });
 
+app.get("/getBlocked/:userId", async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        await client.connect();
+
+        const userObjectId = new ObjectId(userId);
+        const user = await db.collection('users').findOne({ _id: userObjectId });
+        
+        if (!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+
+        const blockIDs = user.blockedUsers || [];
+
+        if (blockIDs.length === 0) {
+            return res.status(200).json({ following: [] });
+        }
+
+        const blockedUsers2 = await db.collection('users')
+        .find({ _id: { $in: blockIDs.map(id => new ObjectId(id)) } })
+        .toArray();
+
+        res.status(200).json({ blockedUsers: blockedUsers2 });
+
+
+    } catch (error) {
+        console.error('Error getting following:', error);
+        res.status(500).json({ message: "A server error occurred" });
+    }
+});
+
 app.get('/activityFeed/:userId', async (req, res) => {
     const { userId } = req.params;
 
