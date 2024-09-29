@@ -510,7 +510,7 @@ app.post('/block/:targetUserId', authMiddleware, async (req, res) => {
         // Check if the target user exists
         const targetUser = await db.collection('users').findOne(
             { _id: new ObjectId(targetUserId) },
-            { projection: { isPrivate: 1 } }
+            { projection: { blockedUsers: 1, isPrivate: 1 } }
         );
 
         if (!targetUser) {
@@ -521,11 +521,6 @@ app.post('/block/:targetUserId', authMiddleware, async (req, res) => {
         const block = await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
             { $addToSet: { blockedUsers: new ObjectId(targetUserId) } }
-        );
-
-        const blockUserOnRecevingEnd = await db.collection('users').updateOne(
-            { _id: new ObjectId(targetUserId) },
-            { $addToSet: { blockedUsers: new ObjectId(userId) } }
         );
 
         if (!block.matchedCount) {
@@ -570,11 +565,6 @@ app.post('/unblock/:targetUserId', authMiddleware, async (req, res) => {
         const block = await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
             { $pull: { blockedUsers: new ObjectId(targetUserId) } }
-        );
-
-        const blockUserOnRecevingEnd = await db.collection('users').updateOne(
-            { _id: new ObjectId(targetUserId) },
-            { $pull: { blockedUsers: new ObjectId(userId) } }
         );
 
         if (!block.matchedCount) {
