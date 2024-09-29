@@ -62,7 +62,7 @@ useEffect(() => {
         console.log(loggedInUser);
         fetchUsers();
     }
-}, [token, loggedInUser]);
+}, [token, loggedInUser, users]); 
 
 
 const filteredUsers = users.filter((user) => {
@@ -74,6 +74,11 @@ const handleFollow = async (targetUserId) => {
 
   if (userToFollow.isPrivate) {
       alert("A request has been sent.");
+  }
+
+  if (userToFollow.blockedUsers && userToFollow.blockedUsers.includes(loggedInUser)) {
+      alert("Can't follow this user.");
+      return;
   }
 
   try {

@@ -118,7 +118,8 @@ const handleFollow = async (targetUserId) => {
   if (userToFollow.isPrivate) {
       alert("A request has been sent.");
   }
-
+  
+  
     try {
         const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
             method: 'POST',

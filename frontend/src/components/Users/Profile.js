@@ -13,6 +13,7 @@ function Profile() {
     const [followedUsers, setFollowedUsers] = useState([]);
     const [requestedUsers, setRequestedUsers] = useState([]);
     const [profilePicture, setProfilePicture] = useState('');
+    const [blockedUsers, setBlockedUsers] = useState([]);
     const [bio, setBio] = useState('');
     const [favoriteAnimes, setFavoriteAnimes] = useState([]);
     const [searchInput, setSearchInput] = useState('');
@@ -78,6 +79,7 @@ function Profile() {
           setFollowers(data.followers);
           setBio(data.bio);
           setIsPrivate(data.isPrivate);
+          setBlockedUsers(data.blockedUsers);
           console.log(data)
           
           const isFollowingUser = data.followers.includes(loggedUserId);
@@ -127,6 +129,12 @@ function Profile() {
         if (targetUserId.isPrivate) {
             alert("A request has been sent.");
         }
+
+        if (blockedUsers.includes(loggedUserId)) {
+            alert("Can't follow this user.");
+            return;
+        }
+
       
         try {
             const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
