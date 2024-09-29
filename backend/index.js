@@ -422,7 +422,7 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
 
         const targetUser = await db.collection('users').findOne(
             { _id: new ObjectId(targetUserId) },
-            { projection: { isPrivate: 1 } }
+            { projection: { isPrivate: 1, blockedUsers: 1 } }
         );
 
         const userIdStuff = await db.collection('users').findOne(
@@ -432,6 +432,10 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
 
         if (!userIdStuff || !targetUser) {
             return res.status(404).json({ message: "User not found" });
+        }
+
+        if (targetUser.blockedUsers && targetUser.blockedUsers.includes(userId)) {
+            return res.status(403).json({ message: "You have been blocked by this user." });
         }
 
         if (targetUser.isPrivate) {
