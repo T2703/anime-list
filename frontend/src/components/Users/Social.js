@@ -31,12 +31,13 @@ function Social() {
         }
         
         const data = await response.json();
+        const currentUser = data.find(user => user._id === loggedInUser);
         const filteredData = data.filter(user => 
           user._id !== loggedInUser && 
-          !(user.blockedUsers && user.blockedUsers.includes(loggedInUser))
+          !(currentUser.blockedUsers && currentUser.blockedUsers.includes(user._id))
       );
-        setUsers(filteredData || []);
-        console.log(data)
+
+      setUsers(filteredData || []);
         
         // Voodoo
         const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
@@ -46,7 +47,7 @@ function Social() {
         setFollowedUsers(followingUsers || []);
         setRequestedUsers(requestedUsers || []);
         setBlockedUsers(blockedUsers || []);
-        console.log(blockedUsers)
+        console.log("Blocked users: ", blockedUsers)
     } catch (error) {
         console.error('Error fetching data:', error);
     }
@@ -61,7 +62,7 @@ useEffect(() => {
         console.log(loggedInUser);
         fetchUsers();
     }
-}, [token, loggedInUser, users]);
+}, [token, loggedInUser]);
 
 
 const filteredUsers = users.filter((user) => {

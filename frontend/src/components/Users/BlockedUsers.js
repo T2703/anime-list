@@ -72,7 +72,7 @@ useEffect(() => {
         console.log(loggedInUser);
         fetchBlock(userId);
     }
-}, [token, userId, navigate]);
+}, [token, userId, navigate, users]);
 
 const handleSearchChange = (e) => {
     //const inputValue = e.target.value.toLowerCase();
