@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
+import '../../styles/Loader.css';
 
 // What's with this page? It's like one of my Japanese animes.
 
@@ -149,7 +150,7 @@ function Anime() {
     const totalPages = Math.ceil(totalItems / 12);
 
     if (loading) {
-        return <div><Navbar /> Loading...</div>;
+        return <div><Navbar /> <div className="loader"></div></div>;
     }
 
     if (error) {

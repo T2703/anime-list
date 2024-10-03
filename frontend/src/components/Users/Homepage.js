@@ -4,6 +4,7 @@ import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
 import { formatDistanceToNow } from 'date-fns';
+import '../../styles/Loader.css';
 
 function Homepage() {
     const [username, setUsername] = useState('');
@@ -116,7 +117,7 @@ function Homepage() {
     }, [token, navigate]);
 
     if (loading) {
-        return <div><Navbar /> Loading...</div>;
+        return <div><Navbar /> <div className="loader"></div></div>;
     }
 
     if (error) {

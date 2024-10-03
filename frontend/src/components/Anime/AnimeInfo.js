@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 import Navbar from '../Navbar';
+import '../../styles/Loader.css';
+import '../../styles/AnimeInfo.css';
 
 function AnimeInfo() {
     const { animeID } = useParams();
@@ -169,7 +171,7 @@ function AnimeInfo() {
     }, [animeID]);
 
     if (loading) {
-        return <div><Navbar /> Loading...</div>;
+        return <div><Navbar /> <div className="loader"></div></div>;
     }
 
     if (error) {
