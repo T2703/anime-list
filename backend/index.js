@@ -521,6 +521,26 @@ app.post('/block/:targetUserId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: "Target user not found" });
         }
 
+        const result1 = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },  // Ensure proper conversion to ObjectId
+            { $pull: { following: new ObjectId(targetUserId) } }
+        );
+
+        const result2 = await db.collection('users').updateOne(
+            { _id: new ObjectId(targetUserId) },
+            { $pull: { followers: new ObjectId(userId) } }
+        );
+
+        const result3 = await db.collection('users').updateOne(
+            { _id: new ObjectId(targetUserId) },
+            { $pull: { following: new ObjectId(userId) } }
+        );
+
+        const result4 = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $pull: { follower: new ObjectId(targetUserId) } }
+        );
+
         // Update the current user's blockedUsers array
         const block = await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
