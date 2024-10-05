@@ -14,6 +14,7 @@ function Homepage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [filterType, setFilterType] = useState('');
     const token = Cookies.get('token');
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -116,6 +117,10 @@ function Homepage() {
         }
     }, [token, navigate]);
 
+    const filteredActivities = filterType
+    ? activityFeed.filter(activity => activity.type === filterType)
+    : activityFeed;
+
     if (loading) {
         return <div><Navbar /> <div className="loader"></div></div>;
     }
@@ -128,9 +133,17 @@ function Homepage() {
         <div>
             <Navbar />
             <div className="container">
+                {/* Filter buttons */}
+                <div className="filter-buttons mb-4">
+                    <button className="btn btn-primary" onClick={() => setFilterType('')}>All</button>
+                    <button className="btn btn-primary" onClick={() => setFilterType('addFavoriteAnime')}>Favorite Anime</button>
+                    <button className="btn btn-primary" onClick={() => setFilterType('follow')}>Follow</button>
+                    <button className="btn btn-primary" onClick={() => setFilterType('followRequest')}>Follow Request</button>
+                </div>
+
                 <div className="row">
-                    {activityFeed.length > 0 ? (
-                        activityFeed.map(activity => (
+                    {filteredActivities.length > 0 ? (
+                        filteredActivities.map(activity => (
                             <div className="col-md-12 mb-4" key={activity._id}>
                                 <div className="card">
                                     <div className="card-body">
@@ -174,9 +187,9 @@ function Homepage() {
                                                     style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
                                                     onClick={() => navigate(`/profile/${activity.userId}`)}
                                                 />
-                                                <p>{activity.mainName} has requested to followed you.</p>
-                                                <button className="btn btn-primary" onClick={() => acceptRequestCall(activity._id)}>accept</button>
-                                                <button className="btn btn-primary" onClick={() => rejectedRequestCall(activity._id)}>decline</button>
+                                                <p>{activity.mainName} has requested to follow you.</p>
+                                                <button className="btn btn-primary" onClick={() => acceptRequestCall(activity._id)}>Accept</button>
+                                                <button className="btn btn-primary" onClick={() => rejectedRequestCall(activity._id)}>Decline</button>
                                             </>
                                         )}
                                         <p>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</p>
