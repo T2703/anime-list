@@ -17,6 +17,7 @@ function AnimeInfo() {
     const [isFavorite, setIsFavorite] = useState(false);
     const navigate = useNavigate();
     const token = Cookies.get('token');
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     useEffect(() => {
         if (!token) {
@@ -39,6 +40,7 @@ function AnimeInfo() {
      */
     const fetchFavoriteAnimes = async (userId) => {
         try {
+            await delay(360);
             const response = await fetch(`http://localhost:8081/getFavoriteAnimes/${userId}`);
             const data = await response.json();
             console.log(response);
@@ -181,7 +183,7 @@ function AnimeInfo() {
     return (
         <div>
             <Navbar />
-            <div className="container">
+            <div className="containerAnime">
                 <div className="row">
                     {animeType ? (
                         <div className="col-md-4 mb-4" key={animeType.id}>

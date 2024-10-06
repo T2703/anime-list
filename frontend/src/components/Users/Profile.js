@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, usehi } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
+import '../../styles/Loader.css';
 
 function Profile() {
     const [username, setUsername] = useState('');
@@ -106,8 +107,9 @@ function Profile() {
     }, [token, navigate, users]);
 
     if (loading) {
-        return <div><Navbar /> Loading...</div>;
+        return <div><Navbar /> <div className="loader"></div></div>;
     }
+
 
     if (error) {
         return <div><Navbar /> Error: {error.message}</div>;
@@ -323,7 +325,7 @@ function Profile() {
                                     {currentItems.length > 0 ? (
                                         currentItems.map(anime => (
                                             <div className="col-md-6 mb-4" key={anime.id}>
-                                                <div className="card">
+                                                <div className="card h-100 d-flex flex-column">
                                                     <h5 className="card-title text-center">{anime.title.english || anime.title.romaji}</h5>
                                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
                                                     <div className="card-body text-center">
