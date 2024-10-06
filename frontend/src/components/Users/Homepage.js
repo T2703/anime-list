@@ -133,7 +133,6 @@ function Homepage() {
         <div>
             <Navbar />
             <div className="container">
-                {/* Filter buttons */}
                 <div className="filter-buttons mb-4">
                     <button className="btn btn-primary" onClick={() => setFilterType('')}>All</button>
                     <button className="btn btn-primary" onClick={() => setFilterType('addFavoriteAnime')}>Favorite Anime</button>

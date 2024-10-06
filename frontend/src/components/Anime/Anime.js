@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import '../../styles/Loader.css';
+import '../../styles/Anime.css';
 
 // What's with this page? It's like one of my Japanese animes.
 
@@ -36,10 +37,15 @@ function Anime() {
         const params = new URLSearchParams(location.search);
         const page = params.get('page');
         const storedSearchInput = localStorage.getItem('searchInput');
+        const storedPage = localStorage.getItem('page');
 
         if (page) {
             setCurrentPage(parseInt(page));
         }
+        else if (storedPage) {
+            setCurrentPage(parseInt(storedPage));
+        }
+
         if (storedSearchInput) {
             setSearchInput(storedSearchInput);
             setSearchQuery(storedSearchInput);
@@ -123,6 +129,7 @@ function Anime() {
         setCurrentPage(prevPage => {
             const nextPage = prevPage + 1;
             navigate(`?page=${nextPage}`);
+            localStorage.setItem('page', nextPage);
             return nextPage;
         });
     };
@@ -130,6 +137,7 @@ function Anime() {
     const handlePreviousPage = () => {
         setCurrentPage(prevPage => {
             const prevPageNumber = prevPage > 1 ? prevPage - 1 : 1;
+            localStorage.setItem('page', prevPageNumber);
             navigate(`?page=${prevPageNumber}`);
             return prevPageNumber;
         });
@@ -177,13 +185,9 @@ function Anime() {
                     {animeList.length > 0 ? (
                         animeList.map(anime => (
                             <div className="col-md-4 mb-4" key={anime.id}>
-                                <div className="card">
+                                <div className="card h-100 d-flex flex-column">
                                     <h3 className="card-title">{anime.title.english || anime.title.romaji}</h3>
                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
-                                    <div className="card-body">
-                                        <p className="card-text">Average Score: {anime.averageScore}</p>
-                                        <p className="card-text">Status: {anime.status}</p>
-                                    </div>
                                     <button className="btn btn-primary ml-2" onClick={() => navigate(`/animeinfo/${anime.id}?page=${currentPage}`)}>View</button>
                                 </div>
                             </div>

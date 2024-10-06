@@ -1,0 +1,21 @@
+/* Set a fixed height for the card */
+.anime-card {
+    height: 500px; /* Adjust this value to fit your design */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.anime-card img {
+    height: 250px; 
+    object-fit: cover;
+    width: 100%;
+}
+
+.anime-card .card-body {
+    flex-grow: 1; /* Ensures the body fills the remaining space */
+}
+
+.anime-card .card-title {
+    margin-bottom: 10px; /* Space between title and image */
+}
