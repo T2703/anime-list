@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 import Navbar from '../Navbar';
 import '../../styles/Loader.css';
 import '../../styles/Anime.css';
@@ -18,13 +19,18 @@ function Anime() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [email, setEmail] = useState('');
+    const [userId, setUserId] = useState('');
     const [searchInput, setSearchInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [totalItems, setTotalItems] = useState(0);
+    const [favoriteAnimes, setFavoriteAnimes] = useState([]);
+    const [isFavorite, setIsFavorite] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const token = Cookies.get('token');
     const fetchTimeout = useRef(null);
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     /**
      * Some stuff with local storage and sending the user back if the token no exist.
@@ -39,6 +45,11 @@ function Anime() {
         const storedSearchInput = localStorage.getItem('searchInput');
         const storedPage = localStorage.getItem('page');
 
+        const decodedToken = jwtDecode(token);
+        const userIdFromToken = decodedToken.userId;
+        setUserId(userIdFromToken);
+        setEmail(localStorage.getItem('email') || '');
+        
         if (page) {
             setCurrentPage(parseInt(page));
         }
@@ -49,6 +60,10 @@ function Anime() {
         if (storedSearchInput) {
             setSearchInput(storedSearchInput);
             setSearchQuery(storedSearchInput);
+        }
+
+        if (userIdFromToken) {
+            fetchFavoriteAnimes(userIdFromToken);
         }
     }, [token, navigate, location]);
 
@@ -120,6 +135,72 @@ function Anime() {
         }, 300); // Delay the fetch by 300ms otherwise it will freak out badly.
     };
 
+    const fetchFavoriteAnimes = async (userId) => {
+        try {
+            await delay(360);
+            const response = await fetch(`http://localhost:8081/getFavoriteAnimes/${userId}`);
+            const data = await response.json();
+            console.log(response);
+    
+            if (response.ok) {
+                const favoriteAnimes = data.favoriteAnimes || [];
+                setFavoriteAnimes(favoriteAnimes);
+            } else {
+                alert(data.message || 'Error fetching favorite animes');
+            }
+        } catch (error) {
+            console.error('Error fetching favorite animes:', error);
+            alert('An error occurred while fetching favorite animes. Please try again later.');
+        }
+    };
+
+    const handleFavoriteAnime = async (anime, userId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/addFavoriteAnime/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, anime: anime }),
+            });
+    
+            if (response.ok) {
+                setFavoriteAnimes([...favoriteAnimes, anime]);
+                setIsFavorite(true);
+            } else {
+                // Error adding anime to favorites
+                const errorData = await response.json();
+                alert(errorData.message || 'Error adding anime to favorites');
+            }
+        } catch (error) {
+            console.error('Error adding anime to favorites:', error);
+            alert('An error occurred while adding anime to favorites. Please try again later.');
+        }
+    };
+
+    const handleRemoveAnime = async (anime) => {
+        try {
+            const response = await fetch('http://localhost:8081/removeAnime', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, anime: anime }),
+            });
+    
+            if (response.ok) {
+                setFavoriteAnimes(favoriteAnimes.filter(a => a.id !== anime.id));
+                setIsFavorite(false);
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || 'Error removing anime');
+            }
+        } catch (error) {
+            console.error('Error removing anime:', error);
+            alert('An error occurred while adding anime to favorites. Please try again later.');
+        }
+    };
+
     // Keeps it refreshed.
     useEffect(() => {
         fetchAnime();
@@ -188,7 +269,24 @@ function Anime() {
                                 <div className="card h-100 d-flex flex-column">
                                     <h3 className="card-title">{anime.title.english || anime.title.romaji}</h3>
                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
-                                    <button className="btn btn-primary ml-2" onClick={() => navigate(`/animeinfo/${anime.id}?page=${currentPage}`)}>View</button>
+                                    <div className="card-body text-center">
+                                        <button className="btn btn-primary" onClick={() => navigate(`/animeinfo/${anime.id}?page=${currentPage}`)}>View</button>
+                                        {favoriteAnimes.some(favAnime => favAnime.id === anime.id) ? (
+                                            <button 
+                                                className="btn btn-danger mt-2"
+                                                onClick={() => handleRemoveAnime(anime)}
+                                            >
+                                                Unfavorite
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                className="btn btn-success mt-2" 
+                                                onClick={() => handleFavoriteAnime(anime, userId)}
+                                            >
+                                                Favorite
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))

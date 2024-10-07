@@ -18,6 +18,7 @@ function Navbar() {
     localStorage.removeItem('username');
     localStorage.removeItem('email');
     localStorage.removeItem('searchInput');
+    localStorage.removeItem('page')
 
     navigate('/login');
   };
