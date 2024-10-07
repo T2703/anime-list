@@ -41,6 +41,8 @@ function Login() {
                 localStorage.setItem('email', email);
                 localStorage.setItem('profilePicture', profilePicture);
                 localStorage.setItem('bio', bio);
+                localStorage.setItem('searchInput', "");
+                localStorage.setItem('page', 1);
 
                 navigate('/homepage');
             } else {
