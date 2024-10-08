@@ -11,12 +11,15 @@ function Profile() {
     const [followingCount, setFollowingCount] = useState(0);
     const [followerCount, setFollowerCount] = useState(0);
     const [followers, setFollowers] = useState([]);
+    const [loggedUserFavorites, setLoggedUserFavorites] = useState([]);
+    const [email, setEmail] = useState('');
     const [followedUsers, setFollowedUsers] = useState([]);
     const [requestedUsers, setRequestedUsers] = useState([]);
     const [profilePicture, setProfilePicture] = useState('');
     const [blockedUsers, setBlockedUsers] = useState([]);
     const [bio, setBio] = useState('');
     const [favoriteAnimes, setFavoriteAnimes] = useState([]);
+    const [isFavorite, setIsFavorite] = useState(false);
     const [searchInput, setSearchInput] = useState('');
     const { userId } = useParams();
     const [loggedUserId, setLoggedUserId] = useState('');
@@ -59,6 +62,21 @@ function Profile() {
         }
     };
 
+    const fetchLoggedUserFavorites = async (loggedUserId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/getFavoriteAnimes/${loggedUserId}`);
+            const data = await response.json();
+    
+            if (response.ok) {
+                setLoggedUserFavorites(data.favoriteAnimes || []);
+            } else {
+                console.error('Error fetching logged-in user favorites:', data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching logged-in user favorites:', error);
+        }
+    };
+
     const fetchUsersID = async (userId) => {
       try {
           const response = await fetch(`http://localhost:8081/userById/${userId}`, {
@@ -97,12 +115,13 @@ function Profile() {
         if (!token) {
             navigate('/login'); 
         } else {
-            fetchUsersID(userId);
-            fetchFavoriteAnimes(userId);
-
             const decodedToken = jwtDecode(token);
             const userIdFromToken = decodedToken.userId;
             setLoggedUserId(userIdFromToken);
+            fetchUsersID(userId);
+            fetchFavoriteAnimes(userId);
+            fetchLoggedUserFavorites(userIdFromToken);
+            setEmail(localStorage.getItem('email') || '');
         }
     }, [token, navigate, users]);
 
@@ -223,6 +242,53 @@ function Profile() {
         }
       };
 
+      const handleFavoriteAnime = async (anime, userId) => {
+        try {
+            const response = await fetch(`http://localhost:8081/addFavoriteAnime/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, anime: anime }),
+            });
+    
+            if (response.ok) {
+                setFavoriteAnimes([...favoriteAnimes, anime]);
+                setIsFavorite(true);
+            } else {
+                // Error adding anime to favorites
+                const errorData = await response.json();
+                alert(errorData.message || 'Error adding anime to favorites');
+            }
+        } catch (error) {
+            console.error('Error adding anime to favorites:', error);
+            alert('An error occurred while adding anime to favorites. Please try again later.');
+        }
+    };
+
+    const handleRemoveAnime = async (anime) => {
+        try {
+            const response = await fetch('http://localhost:8081/removeAnime', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, anime: anime }),
+            });
+    
+            if (response.ok) {
+                setFavoriteAnimes(favoriteAnimes.filter(a => a.id !== anime.id));
+                setIsFavorite(false);
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || 'Error removing anime');
+            }
+        } catch (error) {
+            console.error('Error removing anime:', error);
+            alert('An error occurred while adding anime to favorites. Please try again later.');
+        }
+    };
+
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredFavoriteAnimes.slice(indexOfFirstItem, indexOfLastItem);
@@ -330,6 +396,21 @@ function Profile() {
                                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
                                                     <div className="card-body text-center">
                                                         <button className="btn btn-primary" onClick={() => navigate(`/animeinfo/${anime.id}`)}>View</button>
+                                                        {loggedUserFavorites.some(favAnime => favAnime.id === anime.id) ? (
+                                                            <button 
+                                                                className="btn btn-danger mt-2"
+                                                                onClick={() => handleRemoveAnime(anime)}
+                                                            >
+                                                                Unfavorite
+                                                            </button>
+                                                        ) : (
+                                                            <button 
+                                                                className="btn btn-success mt-2" 
+                                                                onClick={() => handleFavoriteAnime(anime, loggedUserId)}
+                                                            >
+                                                                Favorite
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
