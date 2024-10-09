@@ -27,6 +27,8 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 const port = "8081";
 const host = "localhost";
 
+//db.collection('activities').createIndex({ "timestamp": 1 }, { expireAfterSeconds: 2592000 }); fix this at some point
+
 app.post('/graphql', async (req, res) => {
     const response = await fetch('https://graphql.anilist.co', {
         method: 'POST',
@@ -60,21 +62,20 @@ const upload = multer({ storage: storage });
 
 //----------------------ROUTERS AND API CALLS------------------------------
 app.get("/allUsers", async (req, res) => {
-    await client.connect();
-    console.log("Node connected successfully to GET MongoDB");
+    try {
+        await client.connect();
+        const results = await db
+            .collection("users")
+            .find({})
+            .limit(100)
+            .toArray();
 
-    const query = {};
-    const results = await db
-
-    // Rework this with page nums
-    .collection("users")
-    .find(query)
-    .limit(100)
-    .toArray();
-
-    console.log(results);
-    res.status(200);
-    res.send(results);
+        console.log(results);
+        res.status(200).send(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error fetching users");
+    }
 });
 
 app.get("/userById/:userId", async (req, res) => {
