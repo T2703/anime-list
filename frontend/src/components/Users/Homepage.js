@@ -132,72 +132,64 @@ function Homepage() {
     return (
         <div>
             <Navbar />
-            <div className="container">
-                <div className="filter-buttons mb-4">
+            <div className="container mt-4">
+                <div className="filter-buttons mb-4 text-center">
                     <button className="btn btn-primary" onClick={() => setFilterType('')}>All</button>
                     <button className="btn btn-primary" onClick={() => setFilterType('addFavoriteAnime')}>Favorite Anime</button>
                     <button className="btn btn-primary" onClick={() => setFilterType('follow')}>Follow</button>
                     <button className="btn btn-primary" onClick={() => setFilterType('followRequest')}>Follow Request</button>
                 </div>
-
+    
                 <div className="row">
                     {filteredActivities.length > 0 ? (
                         filteredActivities.map(activity => (
                             <div className="col-md-12 mb-4" key={activity._id}>
-                                <div className="card">
-                                    <div className="card-body">
-                                        {activity.type === 'addFavoriteAnime' && (
-                                            <>
-                                                <img
-                                                    src={activity.mainPfp}
-                                                    className="profile-picture mb-4"
-                                                    alt="Profile"
-                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
-                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
-                                                />
-                                                <p>{activity.mainName} has added: {activity.animeTitle.english} to their favorites.</p>
-                                                <img
-                                                    src={activity.animeImage}
-                                                    className="profile-picture mb-4"
-                                                    alt="Anime Cover"
-                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
-                                                    onClick={() => navigate(`/animeinfo/${activity.animeId}`)}
-                                                />
-                                            </>
-                                        )}
-                                        {activity.type === 'follow' && (
-                                            <>
-                                                <img
-                                                    src={activity.mainPfp}
-                                                    className="profile-picture mb-4"
-                                                    alt="Profile"
-                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
-                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
-                                                />
-                                                <p>{activity.mainName} has followed you.</p>
-                                            </>
-                                        )}
-                                        {activity.type === 'followRequest' && (
-                                            <>
-                                                <img
-                                                    src={activity.mainPfp}
-                                                    className="profile-picture mb-4"
-                                                    alt="Profile"
-                                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
-                                                    onClick={() => navigate(`/profile/${activity.userId}`)}
-                                                />
-                                                <p>{activity.mainName} has requested to follow you.</p>
-                                                <button className="btn btn-primary" onClick={() => acceptRequestCall(activity._id)}>Accept</button>
-                                                <button className="btn btn-primary" onClick={() => rejectedRequestCall(activity._id)}>Decline</button>
-                                            </>
-                                        )}
-                                        <p>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</p>
+                                <div className="card shadow-sm rounded-lg border-0" style={{ overflow: 'hidden' }}>
+                                    <div className="card-body d-flex align-items-center">
+                                        <img
+                                            src={activity.mainPfp}
+                                            className="rounded-circle mr-3"
+                                            alt="Profile"
+                                            style={{ width: '60px', height: '60px', objectFit: 'cover' }}
+                                            onClick={() => navigate(`/profile/${activity.userId}`)}
+                                        />
+                                        <div className="activity-text">
+                                            {activity.type === 'addFavoriteAnime' && (
+                                                <>
+                                                    <p className="mb-2">
+                                                        <strong>{activity.mainName}</strong> has added: <strong>{activity.animeTitle.english}</strong> to their favorites.
+                                                    </p>
+                                                    <img
+                                                        src={activity.animeImage}
+                                                        className="rounded"
+                                                        alt="Anime Cover"
+                                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                                        onClick={() => navigate(`/animeinfo/${activity.animeId}`)}
+                                                    />
+                                                </>
+                                            )}
+                                            {activity.type === 'follow' && (
+                                                <>
+                                                    <p className="mb-2"><strong>{activity.mainName}</strong> has followed you.</p>
+                                                </>
+                                            )}
+                                            {activity.type === 'followRequest' && (
+                                                <>
+                                                    <p className="mb-2"><strong>{activity.mainName}</strong> has requested to follow you.</p>
+                                                    <div>
+                                                        <button className="btn btn-outline-success btn-sm mr-2" onClick={() => acceptRequestCall(activity._id)}>Accept</button>
+                                                        <button className="btn btn-outline-danger btn-sm" onClick={() => rejectedRequestCall(activity._id)}>Decline</button>
+                                                    </div>
+                                                </>
+                                            )}
+                                            <p className="text-muted mt-2">{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <p>No activities found.</p>
+                        <p className="text-center">No activities found.</p>
                     )}
                 </div>
             </div>

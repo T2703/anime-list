@@ -250,15 +250,17 @@ function Anime() {
         <div>
             <Navbar />
             <div className="input-group mb-3" style={{ maxWidth: '300px', margin: '20px auto' }}>
-                <form onSubmit={handleSearchSubmit} className="d-flex w-100">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search"
-                        onChange={handleSearchChange}
-                        value={searchInput}
-                    />
-                    <button type="submit" className="btn btn-success">Search</button>
+                <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
+                <div className="input-group" style={{ maxWidth: '300px' }}>
+                <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search for users"
+                    onChange={handleSearchChange}
+                    value={searchInput}
+                />
+                <button type="submit" className="btn btn-primary">Search</button>
+                </div>
                 </form>
             </div>
             <div className="container">

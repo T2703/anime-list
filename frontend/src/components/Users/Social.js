@@ -54,15 +54,20 @@ function Social() {
 };
 
 useEffect(() => {
-    if (!token) {
-        navigate('/login'); 
-    } else {
-        const decodedToken = jwtDecode(token);
-        setLoggedInUser(decodedToken.userId)
-        console.log(loggedInUser);
-        fetchUsers();
-    }
-}, [token, loggedInUser, users]); 
+  if (!token) {
+      navigate('/login'); 
+  } else {
+      const decodedToken = jwtDecode(token);
+      setLoggedInUser(decodedToken.userId);
+      console.log(decodedToken.userId);
+  }
+}, [token, navigate]); 
+
+useEffect(() => {
+  if (loggedInUser) {
+      fetchUsers();
+  }
+}, [loggedInUser]); 
 
 
 const filteredUsers = users.filter((user) => {
@@ -71,10 +76,6 @@ const filteredUsers = users.filter((user) => {
 
 const handleFollow = async (targetUserId) => {
   const userToFollow = users.find(user => user._id === targetUserId);
-
-  if (userToFollow.isPrivate) {
-      alert("A request has been sent.");
-  }
 
   if (userToFollow.blockedUsers && userToFollow.blockedUsers.includes(loggedInUser)) {
       alert("Can't follow this user.");
@@ -93,15 +94,26 @@ const handleFollow = async (targetUserId) => {
       if (response.ok) {
           setUsers(prevUsers => prevUsers.map(user => {
               if (user._id === targetUserId) {
-                  return {
-                      ...user,
-                      pendingRequests: [...(user.pendingRequests || []), loggedInUser] 
-                  };
+                  if (user.isPrivate) {
+                      return {
+                          ...user,
+                          pendingRequests: [...(user.pendingRequests || []), loggedInUser] 
+                      };
+                  } else {
+                      return {
+                          ...user,
+                          followers: [...(user.followers || []), loggedInUser]
+                      };
+                  }
               }
               return user;
           }));
 
-          console.log('User followed successfully');
+          if (userToFollow.isPrivate) {
+              console.log('Follow request sent successfully');
+          } else {
+              console.log('User followed successfully');
+          }
       } else {
           const errorData = await response.json();
           console.error('Follow user error:', errorData.message || 'Failed to follow user');
@@ -205,7 +217,8 @@ return (
                       style={{ height: "200px", width: "200px", objectFit: "cover" }}
                       onClick={() => navigate(`/profile/${user._id}`)}
                     />
-                    <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div className="card-body text-center">
+                    <div className="d-flex justify-content-center">
                       {user.followers.includes(loggedInUser) ? (
                         <button
                           className="btn btn-danger"
@@ -232,6 +245,7 @@ return (
                         </button>
                       )}
                     </div>
+                  </div>
                   </div>
                   <div className="card-body text-center"></div>
                 </div>
