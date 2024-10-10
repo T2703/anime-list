@@ -176,92 +176,92 @@ const handleUnfollow = async (targetUserId) => {
 };
 
 return (
-    <div className="App">
-      <Navbar />
-      <div>
-        <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
-          <div className="input-group" style={{ maxWidth: '300px' }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search for users"
-              onChange={handleSearchChange}
-              value={searchInput}
-            />
-            <button type="submit" className="btn btn-primary">Search</button>
-          </div>
-        </form>
-        <div className="row m-0">
-          {currentItems.length > 0 ? (
-            currentItems.map(user => (
-              <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div className="card recipe-card" style={{ maxWidth: "360px" }}>
-                  <h5 className="card-title text-center">{user.username}</h5>
-                  <div className="profile-picture-container d-flex justify-content-center align-items-center">
-                    <img
-                      src={user.profilePicture}
-                      className="card-img-top img-fluid rounded-circle"
-                      alt={user.username}
-                      style={{ height: "200px", width: "200px", objectFit: "cover" }}
-                      onClick={() => navigate(`/profile/${user._id}`)}
-                    />
-                    {user._id !== loggedInUser ? (
-                      <div style={{ display: "flex", justifyContent: "center" }}>
-                        {user.followers.includes(loggedInUser) ? (
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleUnfollow(user._id)}
-                            style={{ width: "100px", marginTop: "10px" }}
-                          >
-                            Unfollow
-                          </button>
-                        ) : user.pendingRequests && user.pendingRequests.includes(loggedInUser) ? (
-                          <button
-                            className="btn btn-secondary"
-                            style={{ width: "100px", marginTop: "10px" }}
-                            disabled
-                          >
-                            Requested
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-success"
-                            onClick={() => handleFollow(user._id)}
-                            style={{ width: "100px", marginTop: "10px" }}
-                          >
-                            Follow
-                          </button>
-                        )}
-                      </div>
-                    ) : null}
+  <div className="App">
+    <Navbar />
+    <div>
+      <form onSubmit={handleSearchSubmit} className="searchBar my-2 d-flex justify-content-center">
+        <div className="input-group" style={{ maxWidth: '300px' }}>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search for users"
+            onChange={handleSearchChange}
+            value={searchInput}
+          />
+          <button type="submit" className="btn btn-primary">Search</button>
+        </div>
+      </form>
+      <div className="row m-0">
+        {currentItems.length > 0 ? (
+          currentItems.map(user => (
+            <div key={user._id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <div className="card recipe-card" style={{ maxWidth: "360px" }}>
+                <h5 className="card-title text-center">{user.username}</h5>
+                <div className="profile-picture-container d-flex justify-content-center align-items-center">
+                  <img
+                    src={user.profilePicture}
+                    className="card-img-top img-fluid rounded-circle"
+                    alt={user.username}
+                    style={{ height: "200px", width: "200px", objectFit: "cover", cursor: 'pointer'  }}
+                    onClick={() => navigate(`/profile/${user._id}`)}
+                  />
+                </div> {/* Properly closing the div here */}
+                {user._id !== loggedInUser ? (
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    {user.followers.includes(loggedInUser) ? (
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleUnfollow(user._id)}
+                        style={{ width: "100px", marginTop: "10px" }}
+                      >
+                        Unfollow
+                      </button>
+                    ) : user.pendingRequests && user.pendingRequests.includes(loggedInUser) ? (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ width: "100px", marginTop: "10px" }}
+                        disabled
+                      >
+                        Requested
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-success"
+                        onClick={() => handleFollow(user._id)}
+                        style={{ width: "100px", marginTop: "10px" }}
+                      >
+                        Follow
+                      </button>
+                    )}
                   </div>
-                  <div className="card-body text-center"></div>
-                </div>
+                ) : null}
+                <div className="card-body text-center"></div>
               </div>
-            ))
-          ) : (
-            <p>No users found.</p>
-          )}
-          <div className="pagination d-flex justify-content-center mt-3">
-            <button
-              className="btn btn-primary mx-1"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <button
-              className="btn btn-primary mx-1"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+            </div>
+          ))
+        ) : (
+          <p>No users found.</p>
+        )}
+        <div className="pagination d-flex justify-content-center mt-3">
+          <button
+            className="btn btn-primary mx-1"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          <button
+            className="btn btn-primary mx-1"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);  
 };
 
 export default Following;

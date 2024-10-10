@@ -326,15 +326,15 @@ function Profile() {
                 <div className="row">
                     <div className="col-md-4">
                         <div className="text-center">
-                            <img src={profilePicture} className="profile-picture mb-4" alt="Profile" style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '50%' }} />
+                            <img src={profilePicture} className="profile-picture mb-4" alt="Profile" style={{ width: '200px', height: '200px', objectFit: 'cover', borderRadius: '50%', cursor: 'default' }} />
                             <h3>{username}</h3>
                             {isPrivate && !isProfileOwner && !isFollower  ? (
                                 <div className="alert alert-info text-center"></div>
                             ) : (
                                 <>
                                     <p>{bio}</p>
-                                    <p onClick={() => navigate(`/followers/${userId}`)}>Followers: {followerCount}</p>
-                                    <p onClick={() => navigate(`/following/${userId}`)}>Following: {followingCount}</p>
+                                    <p onClick={() => navigate(`/followers/${userId}`)} style={{ cursor: 'pointer' }}>Followers: {followerCount}</p>
+                                    <p onClick={() => navigate(`/following/${userId}`)} style={{ cursor: 'pointer' }}>Following: {followingCount}</p>
                                 </>
                             )}
                         </div>

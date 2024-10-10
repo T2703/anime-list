@@ -43,7 +43,7 @@ return (
       <li>
       <Link to={`/blockedUsers/${userId}`}>Blocked Users</Link>
       </li>
-      <li onClick={handleLogout}>
+      <li onClick={handleLogout} style={{ cursor: 'pointer' }}>
         Logout
       </li>
     </ul>
