@@ -396,6 +396,7 @@ function Profile() {
                                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
                                                     <div className="card-body text-center">
                                                         <button className="btn btn-primary" onClick={() => navigate(`/animeinfo/${anime.id}`)}>View</button>
+                                                        <br></br>
                                                         {loggedUserFavorites.some(favAnime => favAnime.id === anime.id) ? (
                                                             <button 
                                                                 className="btn btn-danger mt-2"
