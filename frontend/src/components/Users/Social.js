@@ -214,7 +214,7 @@ return (
                     src={user.profilePicture}
                     className="card-img-top img-fluid rounded-circle"
                     alt={user.username}
-                    style={{ height: "200px", width: "200px", objectFit: "cover" }}
+                    style={{ height: "200px", width: "200px", objectFit: "cover", cursor: 'pointer' }}
                     onClick={() => navigate(`/profile/${user._id}`)}
                   />
                 </div>

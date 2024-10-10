@@ -168,7 +168,6 @@ function Anime() {
                 setFavoriteAnimes([...favoriteAnimes, anime]);
                 setIsFavorite(true);
             } else {
-                // Error adding anime to favorites
                 const errorData = await response.json();
                 alert(errorData.message || 'Error adding anime to favorites');
             }
