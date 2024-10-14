@@ -15,58 +15,71 @@ function Social() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 30;
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchUsers = async () => {
     try {
-        const response = await fetch('http://localhost:8081/allUsers', {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch users');
+      setLoading(true);
+      await delay(300);
+      const response = await fetch('http://localhost:8081/allUsers', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '' 
         }
-        
-        const data = await response.json();
-        const currentUser = data.find(user => user._id === loggedInUser);
-        const filteredData = data.filter(user => 
-          user._id !== loggedInUser && 
-          !(currentUser.blockedUsers && currentUser.blockedUsers.includes(user._id))
-      );
+      });
 
-      setUsers(filteredData || []);
-        
-        // Voodoo
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+
+      if (loggedInUser) {
+        const currentUser = data.find(user => user._id === loggedInUser);
+        const filteredData = data.filter(user =>
+          user._id !== loggedInUser &&
+          !(currentUser?.blockedUsers?.includes(user._id))
+        );
+
+        setUsers(filteredData || []);
         const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
-        const requestedUsers = data.filter(user => user.pendingRequests && user.pendingRequests.includes(loggedInUser));
-        const blockedUsers = data.filter(user => user.blockedUsers && user.blockedUsers.includes(loggedInUser));
+        const requestedUsers = data.filter(user => user.pendingRequests?.includes(loggedInUser));
+        const blockedUsers = data.filter(user => user.blockedUsers?.includes(loggedInUser));
 
         setFollowedUsers(followingUsers || []);
         setRequestedUsers(requestedUsers || []);
         setBlockedUsers(blockedUsers || []);
-        console.log("Blocked users: ", blockedUsers)
+        setLoading(false);
+      } else {
+        setUsers(data || []);
+        setLoading(false);
+      }
     } catch (error) {
-        console.error('Error fetching data:', error);
+      console.error('Error fetching data:', error);
+      setError(error);
+      setLoading(false);
     }
-};
+  };
 
 useEffect(() => {
-  if (!token) {
-      navigate('/login'); 
-  } else {
+  const token = Cookies.get('token');
+  if (token) {
+    try {
       const decodedToken = jwtDecode(token);
       setLoggedInUser(decodedToken.userId);
       console.log(decodedToken.userId);
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      Cookies.remove('token'); 
+    }
   }
 }, [token, navigate]); 
 
 useEffect(() => {
-  if (loggedInUser) {
-      fetchUsers();
-  }
+  fetchUsers();
 }, [loggedInUser]); 
 
 
@@ -75,6 +88,10 @@ const filteredUsers = users.filter((user) => {
 });
 
 const handleFollow = async (targetUserId) => {
+  if (!token) {
+    alert("Please login or register to follow a user.");
+    return;
+ }
   const userToFollow = users.find(user => user._id === targetUserId);
 
   if (userToFollow.blockedUsers && userToFollow.blockedUsers.includes(loggedInUser)) {
@@ -124,6 +141,10 @@ const handleFollow = async (targetUserId) => {
 };
 
 const handleUnfollow = async (targetUserId) => {
+    if (!token) {
+      alert("Please login or register to follow a user.");
+      return;
+   }
     try {
         const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
             method: 'POST',
@@ -152,6 +173,16 @@ const handleUnfollow = async (targetUserId) => {
         console.error('Error unfollowing user:', error);
     }
 };
+
+if (loading) {
+  return <div><Navbar /> <div className="loader"></div></div>;
+}
+
+
+if (error) {
+  return <div><Navbar /> Error: {error.message}</div>;
+}
+
 
 const indexOfLastItem = currentPage * itemsPerPage;
 const indexOfFirstItem = indexOfLastItem - itemsPerPage;

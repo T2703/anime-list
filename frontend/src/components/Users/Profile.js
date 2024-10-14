@@ -318,6 +318,7 @@ function Profile() {
         setCurrentPage(1);
         setSearchQuery(searchInput);
     };
+    
 
     return (
         <div>

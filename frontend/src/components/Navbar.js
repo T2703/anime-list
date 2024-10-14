@@ -10,6 +10,7 @@ function Navbar() {
   const navigate = useNavigate();
   const [profilePicture, setProfilePicture] = useState('');
   const [isDropdownVisible, setDropdownVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ function Navbar() {
     localStorage.removeItem('username');
     localStorage.removeItem('email');
     localStorage.removeItem('searchInput');
-    localStorage.removeItem('page')
+    localStorage.removeItem('profilePicture')
 
     navigate('/login');
   };
@@ -34,11 +35,18 @@ function Navbar() {
   };
 
   useEffect(() => {
-    const storedProfilePicture = localStorage.getItem('profilePicture');
-    if (storedProfilePicture) {
-      setProfilePicture(storedProfilePicture);
+    const token = Cookies.get('token');
+    if (token) {
+      setIsLoggedIn(true);  
+      const storedProfilePicture = localStorage.getItem('profilePicture');
+      if (storedProfilePicture) {
+        setProfilePicture(storedProfilePicture);
+      }
+    } else {
+      setIsLoggedIn(false);
     }
   }, []);
+
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -56,11 +64,13 @@ function Navbar() {
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav">
-            <li className="nav-item">
+            {isLoggedIn && (
+              <li className="nav-item">
               <NavLink className="nav-link me-3" aria-current="page" to="/homepage" end>
                 Homepage
               </NavLink>
             </li>
+            )}
             <li className="nav-item">
               <NavLink className="nav-link me-3" aria-current="page" to="/anime" end>
                 Animes
@@ -71,9 +81,16 @@ function Navbar() {
                 Social
               </NavLink>
             </li>
-            <li className="nav-item dropdown-container" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-              <img src={profilePicture} className="profile-picture" alt="Profile" />
-              {isDropdownVisible && <Dropdown />}
+            {isLoggedIn && ( 
+              <li className="nav-item dropdown-container" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                <img src={profilePicture} className="profile-picture" alt="Profile" />
+                {isDropdownVisible && <Dropdown />}
+              </li>
+            )}
+            <li className="nav-item">
+              <button className="nav-link btn btn-link" onClick={handleLogout}>
+                Sign Out
+              </button>
             </li>
           </ul>
         </div>

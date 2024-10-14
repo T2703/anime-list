@@ -15,18 +15,22 @@ function Dropdown() {
     localStorage.removeItem('username');
     localStorage.removeItem('email');
     localStorage.removeItem('searchInput');
+    localStorage.removeItem('profilePicture')
 
     navigate('/login');
   };
 
   useEffect(() => {
-    if (!token) {
-        navigate('/login'); 
-    } else {
-        // TODO: Find betteer solution besides copy and paste.
+    const token = Cookies.get('token');
+    if (token) {
+      try {
         const decodedToken = jwtDecode(token);
         const userIdFromToken = decodedToken.userId;
         setUserId(userIdFromToken);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        Cookies.remove('token'); 
+      }
     }
 }, [token, navigate]);
 
@@ -42,9 +46,6 @@ return (
       </li>
       <li>
       <Link to={`/blockedUsers/${userId}`}>Blocked Users</Link>
-      </li>
-      <li onClick={handleLogout}>
-        Logout
       </li>
     </ul>
   </div>

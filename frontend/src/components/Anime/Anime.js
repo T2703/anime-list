@@ -36,34 +36,38 @@ function Anime() {
      * Some stuff with local storage and sending the user back if the token no exist.
      */
     useEffect(() => {
-        if (!token) {
-            navigate('/login');
-        }
-
         const params = new URLSearchParams(location.search);
         const page = params.get('page');
         const storedSearchInput = localStorage.getItem('searchInput');
         const storedPage = localStorage.getItem('page');
-
-        const decodedToken = jwtDecode(token);
-        const userIdFromToken = decodedToken.userId;
-        setUserId(userIdFromToken);
-        setEmail(localStorage.getItem('email') || '');
+        const token = Cookies.get('token');
+ 
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                const userIdFromToken = decodedToken.userId;
+                setUserId(userIdFromToken);
+                setEmail(localStorage.getItem('email') || '');
+                
+                if (page) {
+                    setCurrentPage(parseInt(page));
+                }
+                else if (storedPage) {
+                    setCurrentPage(parseInt(storedPage));
+                }
         
-        if (page) {
-            setCurrentPage(parseInt(page));
-        }
-        else if (storedPage) {
-            setCurrentPage(parseInt(storedPage));
-        }
-
-        if (storedSearchInput) {
-            setSearchInput(storedSearchInput);
-            setSearchQuery(storedSearchInput);
-        }
-
-        if (userIdFromToken) {
-            fetchFavoriteAnimes(userIdFromToken);
+                if (storedSearchInput) {
+                    setSearchInput(storedSearchInput);
+                    setSearchQuery(storedSearchInput);
+                }
+        
+                if (userIdFromToken) {
+                    fetchFavoriteAnimes(userIdFromToken);
+                }
+            } catch (error) {
+                console.error("Error decoding token:", error);
+                Cookies.remove('token');
+            }
         }
     }, [token, navigate, location]);
 
@@ -155,6 +159,10 @@ function Anime() {
     };
 
     const handleFavoriteAnime = async (anime, userId) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8081/addFavoriteAnime/${userId}`, {
                 method: 'POST',
@@ -179,6 +187,11 @@ function Anime() {
     };
 
     const handleRemoveAnime = async (anime) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
+        
         try {
             const response = await fetch('http://localhost:8081/removeAnime', {
                 method: 'POST',
