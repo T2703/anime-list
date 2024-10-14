@@ -209,39 +209,39 @@ return (
                     src={user.profilePicture}
                     className="card-img-top img-fluid rounded-circle"
                     alt={user.username}
-                    style={{ height: "200px", width: "200px", objectFit: "cover" }}
+                    style={{ height: "200px", width: "200px", objectFit: "cover", cursor: 'pointer'  }}
                     onClick={() => navigate(`/profile/${user._id}`)}
                   />
-                  {user._id !== loggedInUser ? (
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      {user.followers.includes(loggedInUser) ? (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleUnfollow(user._id)}
-                          style={{ width: "100px", marginTop: "10px" }}
-                        >
-                          Unfollow
-                        </button>
-                      ) : user.pendingRequests && user.pendingRequests.includes(loggedInUser) ? (
-                        <button
-                          className="btn btn-secondary"
-                          style={{ width: "100px", marginTop: "10px" }}
-                          disabled
-                        >
-                          Requested
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handleFollow(user._id)}
-                          style={{ width: "100px", marginTop: "10px" }}
-                        >
-                          Follow
-                        </button>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
+                </div> 
+                {user._id !== loggedInUser ? (
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    {user.followers.includes(loggedInUser) ? (
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleUnfollow(user._id)}
+                        style={{ width: "100px", marginTop: "10px" }}
+                      >
+                        Unfollow
+                      </button>
+                    ) : user.pendingRequests && user.pendingRequests.includes(loggedInUser) ? (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ width: "100px", marginTop: "10px" }}
+                        disabled
+                      >
+                        Requested
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-success"
+                        onClick={() => handleFollow(user._id)}
+                        style={{ width: "100px", marginTop: "10px" }}
+                      >
+                        Follow
+                      </button>
+                    )}
+                  </div>
+                ) : null}
                 <div className="card-body text-center"></div>
               </div>
             </div>
