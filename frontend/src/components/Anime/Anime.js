@@ -41,6 +41,18 @@ function Anime() {
         const storedSearchInput = localStorage.getItem('searchInput');
         const storedPage = localStorage.getItem('page');
         const token = Cookies.get('token');
+
+        if (page) {
+            setCurrentPage(parseInt(page));
+        }
+        else if (storedPage) {
+            setCurrentPage(parseInt(storedPage));
+        }
+
+        if (storedSearchInput) {
+            setSearchInput(storedSearchInput);
+            setSearchQuery(storedSearchInput);
+        }
  
         if (token) {
             try {
@@ -48,18 +60,6 @@ function Anime() {
                 const userIdFromToken = decodedToken.userId;
                 setUserId(userIdFromToken);
                 setEmail(localStorage.getItem('email') || '');
-                
-                if (page) {
-                    setCurrentPage(parseInt(page));
-                }
-                else if (storedPage) {
-                    setCurrentPage(parseInt(storedPage));
-                }
-        
-                if (storedSearchInput) {
-                    setSearchInput(storedSearchInput);
-                    setSearchQuery(storedSearchInput);
-                }
         
                 if (userIdFromToken) {
                     fetchFavoriteAnimes(userIdFromToken);

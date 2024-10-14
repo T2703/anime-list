@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
+import '../../styles/Loader.css';
 
 function Social() {
   const [users, setUsers] = useState([]);

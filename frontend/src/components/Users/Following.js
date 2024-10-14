@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
+import '../../styles/Loader.css';
 
 function Following() {
   const [users, setUsers] = useState([]);
@@ -15,10 +16,15 @@ function Following() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 30;
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchRequestedUsers = async () => {
     try {
+      setLoading(true);
+      await delay(300);
         const response = await fetch('http://localhost:8081/allUsers', {
             headers: {
                 'Content-Type': 'application/json',
@@ -34,8 +40,11 @@ function Following() {
         const requestedUsers = data.filter(user => user.pendingRequests && user.pendingRequests.includes(loggedInUser));
         
         setRequestedUsers(requestedUsers || []);
+        setLoading(false);
     } catch (error) {
         console.error('Error fetching data:', error);
+        setError(error);
+        setLoading(false);
     }
 };
 
@@ -66,14 +75,18 @@ function Following() {
 };
 
 useEffect(() => {
-    if (!token) {
-        navigate('/login'); 
-    } else {
+  fetchFollowing(userId);
+  fetchRequestedUsers();
+    if (token) {
+      try {
         const decodedToken = jwtDecode(token);
         setLoggedInUser(decodedToken.userId);
         console.log(loggedInUser);
-        fetchFollowing(userId);
-        fetchRequestedUsers();
+      }
+      catch (error) {
+        console.error("Error decoding token:", error);
+        Cookies.remove('token'); 
+      }
     }
 }, [token, navigate]);
 
@@ -107,6 +120,15 @@ const handleSearchSubmit = (e) => {
     setSearchQuery(searchInput);
 };
 
+if (loading) {
+  return <div><Navbar /> <div className="loader"></div></div>;
+}
+
+
+if (error) {
+  return <div><Navbar /> Error: {error.message}</div>;
+}
+
 
 const indexOfLastItem = currentPage * itemsPerPage;
 const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -114,6 +136,10 @@ const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
 const handleFollow = async (targetUserId) => {
+  if (!token) {
+    alert("Please login or register to follow a user.");
+    return;
+ }
     try {
         const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
             method: 'POST',
@@ -146,6 +172,10 @@ const handleFollow = async (targetUserId) => {
 };
 
 const handleUnfollow = async (targetUserId) => {
+  if (!token) {
+    alert("Please login or register to follow a user.");
+    return;
+ }
     try {
         const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
             method: 'POST',

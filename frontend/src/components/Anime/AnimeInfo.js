@@ -19,17 +19,22 @@ function AnimeInfo() {
     const token = Cookies.get('token');
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    useEffect(() => {
-        if (!token) {
-            navigate('/login');
-        }
-        const decodedToken = jwtDecode(token);
-        const userIdFromToken = decodedToken.userId;
-        setUserId(userIdFromToken);
-        setEmail(localStorage.getItem('email') || '');
-
-        if (userIdFromToken) {
-            fetchFavoriteAnimes(userIdFromToken);
+    useEffect(() => { 
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                const userIdFromToken = decodedToken.userId;
+                setUserId(userIdFromToken);
+                setEmail(localStorage.getItem('email') || '');
+        
+                if (userIdFromToken) {
+                    fetchFavoriteAnimes(userIdFromToken);
+                }
+            }
+            catch (error) {
+                console.error("Error decoding token:", error);
+                Cookies.remove('token');
+            }
         }
         
     }, [token, navigate]);
@@ -65,6 +70,10 @@ function AnimeInfo() {
      * @param {Anime they want} anime 
      */
     const handleFavoriteAnime = async (anime, userId) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8081/addFavoriteAnime/${userId}`, {
                 method: 'POST',
@@ -93,6 +102,10 @@ function AnimeInfo() {
      * @param {Anime they want} anime 
      */
     const handleRemoveAnime = async (anime) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
         try {
             const response = await fetch('http://localhost:8081/removeAnime', {
                 method: 'POST',
