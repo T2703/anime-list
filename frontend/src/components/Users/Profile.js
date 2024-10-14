@@ -30,6 +30,7 @@ function Profile() {
     const [isPrivate, setIsPrivate] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
+    const [loggedInUser, setLoggedInUser] = useState(null);
     const token = Cookies.get('token');
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -112,16 +113,20 @@ function Profile() {
   };
 
     useEffect(() => {
-        if (!token) {
-            navigate('/login'); 
-        } else {
-            const decodedToken = jwtDecode(token);
-            const userIdFromToken = decodedToken.userId;
-            setLoggedUserId(userIdFromToken);
-            fetchUsersID(userId);
-            fetchFavoriteAnimes(userId);
-            fetchLoggedUserFavorites(userIdFromToken);
-            setEmail(localStorage.getItem('email') || '');
+        fetchUsersID(userId);
+        fetchFavoriteAnimes(userId);
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                const userIdFromToken = decodedToken.userId;
+                setLoggedUserId(userIdFromToken);
+                fetchLoggedUserFavorites(userIdFromToken);
+                setEmail(localStorage.getItem('email') || '');
+            }
+            catch (error) {
+                console.error("Error decoding token:", error);
+                Cookies.remove('token');
+            }
         }
     }, [token, navigate, users]);
 
@@ -144,6 +149,11 @@ function Profile() {
     const isProfileOwner = loggedUserId === userId;
 
     const handleFollow = async (targetUserId) => {
+        if (!token) {
+            alert("Please login or register to follow a user.");
+            return;
+        }
+        
         const userToFollow = users.find(user => user._id === targetUserId);
         
 
@@ -188,6 +198,10 @@ function Profile() {
       };
 
     const handleUnfollow = async (targetUserId) => {
+        if (!token) {
+            alert("Please login or register to follow a user.");
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
                 method: 'POST',
@@ -218,6 +232,10 @@ function Profile() {
     };
 
     const handleBlock = async (targetUserId) => {
+        if (!token) {
+            alert("Please login or register to block a user.");
+            return;
+        }
         const userToFollow = users.find(user => user._id === targetUserId);
       
         try {
@@ -243,6 +261,10 @@ function Profile() {
       };
 
       const handleFavoriteAnime = async (anime, userId) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
         try {
             const response = await fetch(`http://localhost:8081/addFavoriteAnime/${userId}`, {
                 method: 'POST',
@@ -267,6 +289,10 @@ function Profile() {
     };
 
     const handleRemoveAnime = async (anime) => {
+        if (!token) {
+            alert("Please login or register to favortie an anime.");
+            return;
+        }
         try {
             const response = await fetch('http://localhost:8081/removeAnime', {
                 method: 'POST',

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Cookies from "js-cookie";
 import Navbar from '../Navbar';
 import { jwtDecode } from "jwt-decode";
+import '../../styles/Loader.css';
 
 function Followers() {
   const [users, setUsers] = useState([]);
@@ -16,9 +17,14 @@ function Followers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchRequestedUsers = async () => {
     try {
+      setLoading(true);
+      await delay(300);
         const response = await fetch('http://localhost:8081/allUsers', {
             headers: {
                 'Content-Type': 'application/json',
@@ -34,8 +40,11 @@ function Followers() {
         const requestedUsers = data.filter(user => user.pendingRequests && user.pendingRequests.includes(loggedInUser));
         
         setRequestedUsers(requestedUsers || []);
+        setLoading(false);
     } catch (error) {
         console.error('Error fetching data:', error);
+        setError(error);
+        setLoading(false);
     }
 };
 
@@ -62,15 +71,20 @@ function Followers() {
 };
 
 useEffect(() => {
-    if (!token) {
-        navigate('/login'); 
-    } else {
+    fetchFollowers(userId);
+    fetchRequestedUsers();
+    if (token) {
+      try {
         const decodedToken = jwtDecode(token);
         setLoggedInUser(decodedToken.userId);
         console.log(decodedToken.userId);
-        fetchFollowers(userId);
-        fetchRequestedUsers();
+      }
+      catch (error) {
+        console.error("Error decoding token:", error);
+        Cookies.remove('token'); 
+      }
     }
+
 }, [token, navigate]);
 
 const handleSearchChange = (e) => {
@@ -113,12 +127,15 @@ const handleNextPage = () => {
 
 
 const handleFollow = async (targetUserId) => {
+  if (!token) {
+    alert("Please login or register to follow a user.");
+    return;
+ }
   const userToFollow = users.find(user => user._id === targetUserId);
 
   if (userToFollow.isPrivate) {
       alert("A request has been sent.");
   }
-  
   
     try {
         const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
@@ -153,6 +170,10 @@ const handleFollow = async (targetUserId) => {
 };
 
 const handleUnfollow = async (targetUserId) => {
+  if (!token) {
+    alert("Please login or register to follow a user.");
+    return;
+ }
     try {
         const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
             method: 'POST',
@@ -181,6 +202,16 @@ const handleUnfollow = async (targetUserId) => {
         console.error('Error unfollowing user:', error);
     }
 };
+
+if (loading) {
+  return <div><Navbar /> <div className="loader"></div></div>;
+}
+
+
+if (error) {
+  return <div><Navbar /> Error: {error.message}</div>;
+}
+
 
 return (
   <div className="App">
