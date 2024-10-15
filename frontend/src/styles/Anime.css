@@ -19,3 +19,8 @@
 .anime-card .card-title {
     margin-bottom: 10px; /* Space between title and image */
 }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
