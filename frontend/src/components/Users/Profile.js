@@ -366,34 +366,34 @@ function Profile() {
                             )}
                         </div>
                         {!isProfileOwner && (
-                <>
-                    {isFollower ? (
-                        <button 
-                            className="btn btn-danger" 
-                            onClick={() => handleUnfollow(userId)}
-                        >
-                            Unfollow
-                        </button>
-                    ) : requestedUsers.some(user => user._id === userId) ? (
-                        <button className="btn btn-secondary" disabled>
-                            Request Sent
-                        </button>
-                    ) : (
-                        <button 
-                            className="btn btn-primary" 
-                            onClick={() => handleFollow(userId)}
-                        >
-                            Follow
-                        </button>
-                    )}
-                <button
-                    className="btn btn-primary mx-1"
-                    onClick={() => handleBlock(userId)}
-                >
-                    Block
-                </button>
-                </>
-            )}
+                            <div className="d-flex justify-content-center">
+                                {isFollower ? (
+                                    <button 
+                                        className="btn btn-danger mx-1" 
+                                        onClick={() => handleUnfollow(userId)}
+                                    >
+                                        Unfollow
+                                    </button>
+                                ) : requestedUsers.some(user => user._id === userId) ? (
+                                    <button className="btn btn-secondary mx-1" disabled>
+                                        Request Sent
+                                    </button>
+                                ) : (
+                                    <button 
+                                        className="btn btn-primary mx-1" 
+                                        onClick={() => handleFollow(userId)}
+                                    >
+                                        Follow
+                                    </button>
+                                )}
+                                <button
+                                    className="btn btn-primary mx-1"
+                                    onClick={() => handleBlock(userId)}
+                                >
+                                    Block
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <div className="col-md-8">
                         {isPrivate && !isProfileOwner && !isFollower ? (

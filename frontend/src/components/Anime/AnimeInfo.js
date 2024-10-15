@@ -197,25 +197,40 @@ function AnimeInfo() {
         <div>
             <Navbar />
             <div className="containerAnime">
-                <div className="row">
+                <div className="row d-flex align-items-start">
                     {animeType ? (
-                        <div className="col-md-4 mb-4" key={animeType.id}>
-                            <div className="card">
-                                <h3 className="card-title">{animeType.title.english || animeType.title.romaji}</h3>
-                                <img src={animeType.coverImage.large} className="card-img-top" alt={animeType.title.romaji} />
-                                <div className="card-body">
-                                    <p className="card-text">Average Score: {animeType.averageScore}</p>
-                                    <p className="card-text">Status: {animeType.status}</p>
-                                    <p className="card-text">Episodes: {animeType.episodes}</p>
-                                    <p className="card-text">{animeType.description}</p>
+                        <>
+                            <div className="col-md-4 mb-4">
+                                <img
+                                    src={animeType.coverImage.large}
+                                    className=  "card-img-top"
+                                    alt={animeType.title.romaji}
+                                    style={{ width: '100%', maxWidth: '350px', height: 'auto' }} 
+                                />
+                            </div>
+                            <div className="col-md-8 mb-4">
+                                <div className="card h-100">
+                                    <h3 className="card-title text-center">{animeType.title.english || animeType.title.romaji}</h3>
+                                    <div className="card-body text-center">
+                                        <p className="card-text"><strong>Average Score:</strong> {animeType.averageScore}</p>
+                                        <p className="card-text"><strong>Status:</strong> {animeType.status}</p>
+                                        <p className="card-text"><strong>Episodes:</strong> {animeType.episodes}</p>
+                                        <p className="card-text">{animeType.description.replace(/<[^>]+>/g, '')}</p>
+                                    </div>
+                                    <div className="card-footer text-center">
+                                        {isFavorite ? (
+                                            <button className="btn btn-danger ml-2" onClick={() => handleRemoveAnime(animeType, userId)}>
+                                                Unfavorite
+                                            </button>
+                                        ) : (
+                                            <button className="btn btn-success ml-2" onClick={() => handleFavoriteAnime(animeType, userId)}>
+                                                Favorite
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                            {isFavorite ? (
-                                <button className="btn btn-danger ml-2" onClick={() => handleRemoveAnime(animeType, userId)}>Unfavorite</button>
-                            ) : (
-                                <button className="btn btn-danger ml-2" onClick={() => handleFavoriteAnime(animeType, userId)}>Favorite</button>
-                            )}
-                        </div>
+                        </>
                     ) : (
                         <p>No anime data found.</p>
                     )}
@@ -223,6 +238,7 @@ function AnimeInfo() {
             </div>
         </div>
     );
+    
 }
 
 export default AnimeInfo;
