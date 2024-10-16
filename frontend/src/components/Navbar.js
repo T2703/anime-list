@@ -66,10 +66,10 @@ function Navbar() {
           <ul className="navbar-nav">
             {isLoggedIn && (
               <li className="nav-item">
-              <NavLink className="nav-link me-3" aria-current="page" to="/homepage" end>
-                Homepage
-              </NavLink>
-            </li>
+                <NavLink className="nav-link me-3" aria-current="page" to="/homepage" end>
+                  Homepage
+                </NavLink>
+              </li>
             )}
             <li className="nav-item">
               <NavLink className="nav-link me-3" aria-current="page" to="/anime" end>
@@ -81,17 +81,25 @@ function Navbar() {
                 Social
               </NavLink>
             </li>
-            {isLoggedIn && ( 
-              <li className="nav-item dropdown-container" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                <img src={profilePicture} className="profile-picture" alt="Profile" />
-                {isDropdownVisible && <Dropdown />}
+            {isLoggedIn ? (
+              <>
+                <li className="nav-item">
+                  <button className="nav-link btn btn-link" onClick={handleLogout}>
+                    Sign Out
+                  </button>
+                </li>
+                <li className="nav-item dropdown-container" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                  <img src={profilePicture} className="profile-picture" alt="Profile" />
+                  {isDropdownVisible && <Dropdown />}
+                </li>
+              </>
+            ) : (
+              <li className="nav-item">
+                <NavLink className="nav-link me-3" aria-current="page" to="/login" end>
+                  Sign In
+                </NavLink>
               </li>
             )}
-            <li className="nav-item">
-              <button className="nav-link btn btn-link" onClick={handleLogout}>
-                Sign Out
-              </button>
-            </li>
           </ul>
         </div>
       </div>

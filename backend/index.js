@@ -19,6 +19,7 @@ const jwt = require("jsonwebtoken");
 const fs = require('fs');
 const authMiddleware = require('./authMiddleware');
 const multer = require("multer");
+const cron = require('node-cron');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -26,8 +27,6 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 
 const port = "8081";
 const host = "localhost";
-
-//db.collection('activities').createIndex({ "timestamp": 1 }, { expireAfterSeconds: 2592000 }); fix this at some point
 
 app.post('/graphql', async (req, res) => {
     const response = await fetch('https://graphql.anilist.co', {
@@ -46,6 +45,27 @@ app.listen(port, () => {
     console.log("App listening at http://%s:%s", host, port);
     console.log(`Proxy server is running at http://localhost:${port}`);
 
+});
+
+// This deletes the activites every month
+cron.schedule('0 0 * * *', async () => {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getSeconds() - 1);
+
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+
+        const deleteResult = await db.collection('activities').deleteMany({
+            timestamp: { $lt: oneMonthAgo }
+        });
+
+        console.log(`${deleteResult.deletedCount} old activities deleted.`);
+    } catch (error) {
+        console.error('Error deleting old activities: ', error);
+    } finally {
+        await client.close();
+    }
 });
 
 //----------------------MULTER CONFIGURATION-----------------------------
@@ -744,17 +764,19 @@ app.put('/updateAccount/:userId', authMiddleware, upload.single('profilePic'), a
 
         const updateFields = {};
         const currentUser = await db.collection('users').findOne({ _id: userObjectId });
-        const existingUser = await db.collection('users').findOne({ email });
         if (!currentUser) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+        if (email && email !== currentUser.email) {
+            const existingUser = await db.collection('users').findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ message: "Email is already associated with another account" });
+            }
+            updateFields.email = email;
         }
 
         if (username) updateFields.username = username;
-        if (email) updateFields.email = email;
         if (bio) updateFields.bio = bio;
         if (profilePicture) updateFields.profilePicture = profilePicture;
         if (typeof isPrivate !== 'undefined') updateFields.isPrivate = isPrivate === 'true';
@@ -770,12 +792,11 @@ app.put('/updateAccount/:userId', authMiddleware, upload.single('profilePic'), a
         }
 
         if (!isPrivate) {
-            const removeAllPending = await db.collection('users').updateOne(
-                { _id: new ObjectId(request.userId) },
-                { $set: { pendingRequests: [] } } 
+            await db.collection('users').updateOne(
+                { _id: new ObjectId(userId) },
+                { $set: { pendingRequests: [] } }
             );
-
-            const removeAllActivites = await db.collection('activities').deleteMany({ type: "followRequest" });
+            await db.collection('activities').deleteMany({ type: "followRequest" });
         }
 
         const result = await db.collection('users').updateOne(
