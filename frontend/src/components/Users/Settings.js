@@ -12,6 +12,7 @@ function Settings() {
     const [newBio, setNewBio] = useState('');
     const [newPFP, setNewPFP] = useState(null);
     const [password, setPassword] = useState('');
+    const [profilePicture, setProfilePicture] = useState('');
     const [email, setEmail] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [isPrivate, setIsPrivate] = useState(false);
@@ -46,7 +47,7 @@ function Settings() {
             console.log(isPrivate)
 
             setNewUsername(data.username);
-            //setProfilePicture(data.profilePicture);
+            setProfilePicture(data.profilePicture);
             setNewEmail(data.email);
             setNewBio(data.bio);
         
@@ -78,6 +79,7 @@ function Settings() {
                 if (newEmail.trim() !== '') localStorage.setItem('email', newEmail);
                 if (newBio.trim() !== '') localStorage.setItem('bio', newBio);
                 if (newPFP) localStorage.setItem('profilePicture', data.user.profilePicture);
+                setProfilePicture(data.user.profilePicture);
             } else {
                 alert(data.message || 'Error updating profile');
             }
@@ -125,8 +127,10 @@ function Settings() {
       }
   };
 
+  const handleProfilePicClick = () => {
+    document.getElementById('newPFP').click(); 
+};
     
-
 
   return (
     <div>
@@ -138,6 +142,22 @@ function Settings() {
                         <div className="card-body">
                             <h1 className="card-title text-center mb-4">Update Account</h1>
                             <form onSubmit={handleUpdateUser}>
+                            <div className="text-center mb-3">
+                                    <img
+                                        src={profilePicture}
+                                        alt="Profile"
+                                        onClick={handleProfilePicClick}
+                                        className="img-fluid rounded-circle"
+                                        style={{ cursor: 'pointer', width: '150px', height: '150px', objectFit: 'cover' }}
+                                    />
+                                    <input
+                                        type="file"
+                                        id="newPFP"
+                                        onChange={(e) => setNewPFP(e.target.files[0])}
+                                        style={{ display: 'none' }}
+                                        accept="image/png, image/jpeg"
+                                    />
+                                </div>
                                 <div className="mb-3">
                                     <label htmlFor="newUsername" className="form-label">Username:</label>
                                     <input
@@ -166,16 +186,6 @@ function Settings() {
                                         id="newBio"
                                         value={newBio}
                                         onChange={(e) => setNewBio(e.target.value)}
-                                    />
-                                </div>
-                                <div className="form-group mb-3">
-                                    <label htmlFor="newPFP" className="form-label">Profile Picture:</label>
-                                    <input
-                                        type="file"
-                                        className="form-control"
-                                        id="newPFP"
-                                        onChange={(e) => setNewPFP(e.target.files[0])}
-                                        accept="image/png, image/jpeg"
                                     />
                                 </div>
                                 <div className="form-group mb-3">
