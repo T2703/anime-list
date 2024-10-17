@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
 import Navbar from '../Navbar';
 import Cookies from 'js-cookie';
 import { jwtDecode } from "jwt-decode";
+import Croppie from 'croppie';
 
 function Settings() {
     const [userId, setUserId] = useState('');
@@ -15,8 +16,12 @@ function Settings() {
     const [profilePicture, setProfilePicture] = useState('');
     const [email, setEmail] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [showModalCrop, setShowModalCrop] = useState(false);
     const [isPrivate, setIsPrivate] = useState(false);
     const token = Cookies.get('token');
+    const croppieRef = useRef(null);
+    const [croppieInstance, setCroppieInstance] = useState(null); 
+    const [croppedImage, setCroppedImage] = useState(''); 
 
     useEffect(() => {
         if (token) {
@@ -56,6 +61,17 @@ function Settings() {
         }
     };
 
+    const base64ToBlob = (base64) => {
+        const byteString = atob(base64.split(',')[1]);
+        const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    };
+
     const handleUpdateUser = async (e) => {
         e.preventDefault();
         try {
@@ -63,7 +79,10 @@ function Settings() {
             if (newUsername) formData.append('username', newUsername);
             if (newEmail) formData.append('email', newEmail);
             if (newBio) formData.append('bio', newBio);
-            if (newPFP) formData.append('profilePic', newPFP);
+            if (croppedImage) {
+                const blob = base64ToBlob(croppedImage);
+                formData.append('profilePic', blob, 'profilePic.png');
+            }
             formData.append('isPrivate', isPrivate);
 
             const response = await fetch(`http://localhost:8081/updateAccount/${userId}`, {
@@ -78,8 +97,8 @@ function Settings() {
                 if (newUsername.trim() !== '') localStorage.setItem('username', newUsername);
                 if (newEmail.trim() !== '') localStorage.setItem('email', newEmail);
                 if (newBio.trim() !== '') localStorage.setItem('bio', newBio);
-                if (newPFP) localStorage.setItem('profilePicture', data.user.profilePicture);
-                setProfilePicture(data.user.profilePicture);
+                if (croppedImage) localStorage.setItem('profilePicture', data.user.profilePicture);
+                setProfilePicture(croppedImage);
             } else {
                 alert(data.message || 'Error updating profile');
             }
@@ -130,6 +149,52 @@ function Settings() {
   const handleProfilePicClick = () => {
     document.getElementById('newPFP').click(); 
 };
+
+const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setShowModalCrop(true);
+            
+            setTimeout(() => {
+                if (croppieInstance) {
+                    croppieInstance.destroy();
+                    setCroppieInstance(null);
+                    
+                }
+                if (croppieRef.current) {  // Ensure the modal is rendered and the croppieRef is not null
+                    const newCroppie = new Croppie(croppieRef.current, {
+                        viewport: { width: 200, height: 200, type: 'circle' },
+                        boundary: { width: 300, height: 300 },
+                        enableOrientation: true,
+                    });
+
+                    newCroppie.bind({ url: event.target.result });
+                    setCroppieInstance(newCroppie); // Save the new instance
+                }
+            }, 50);  // Give time for the modal and ref to be rendered
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+};
+
+const handleCrop = () => {
+    if (croppieInstance) {
+        croppieInstance.result({
+            type: 'base64',
+            size: 'viewport',
+            quality: 1
+        }).then((result) => {
+            setCroppedImage(result);
+            setNewPFP(result);
+            croppieInstance.destroy(); 
+            setCroppieInstance(null);
+        });
+        setShowModalCrop(false);
+    }
+};
     
 
   return (
@@ -143,21 +208,21 @@ function Settings() {
                             <h1 className="card-title text-center mb-4">Update Account</h1>
                             <form onSubmit={handleUpdateUser}>
                             <div className="text-center mb-3">
-                                    <img
-                                        src={profilePicture}
-                                        alt="Profile"
-                                        onClick={handleProfilePicClick}
-                                        className="img-fluid rounded-circle"
-                                        style={{ cursor: 'pointer', width: '150px', height: '150px', objectFit: 'cover' }}
-                                    />
-                                    <input
-                                        type="file"
-                                        id="newPFP"
-                                        onChange={(e) => setNewPFP(e.target.files[0])}
-                                        style={{ display: 'none' }}
-                                        accept="image/png, image/jpeg"
-                                    />
-                                </div>
+                                        <img
+                                            src={croppedImage || profilePicture || "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
+                                            alt="Profile"
+                                            onClick={handleProfilePicClick}
+                                            className="img-fluid rounded-circle"
+                                            style={{ cursor: 'pointer', width: '150px', height: '150px', objectFit: 'cover' }}
+                                        />
+                                        <input
+                                            type="file"
+                                            id="newPFP"
+                                            onChange={handleFileChange}
+                                            style={{ display: 'none' }}
+                                            accept="image/png, image/jpeg"
+                                        />
+                                    </div>
                                 <div className="mb-3">
                                     <label htmlFor="newUsername" className="form-label">Username:</label>
                                     <input
@@ -224,6 +289,23 @@ function Settings() {
                                 <div className="modal-footer">
                                     <button type="button" className="btn btn-danger" onClick={handleDelete}>Yes</button>
                                     <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>No</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`modal ${showModalCrop ? "d-block" : "d-none"}`} tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
+                        <div className="modal-dialog" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Crop Image</h5>
+                                    <button type="button" className="btn-close" onClick={() => setShowModalCrop(false)}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <div ref={croppieRef}></div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-primary" onClick={handleCrop}>Crop</button>
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowModalCrop(false)}>Cancel</button>
                                 </div>
                             </div>
                         </div>
