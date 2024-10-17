@@ -12,6 +12,7 @@ function Register() {
     const [croppieInstance, setCroppieInstance] = useState(null); 
     const [croppedImage, setCroppedImage] = useState(''); 
     const navigate = useNavigate();
+    const [showModalCrop, setShowModalCrop] = useState(false);
     
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
@@ -68,18 +69,29 @@ function Register() {
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
+                setShowModalCrop(true);
                 
-                const newCroppie = new Croppie(croppieRef.current, {
-                    viewport: { width: 200, height: 200, type: 'circle' },
-                    boundary: { width: 300, height: 300 },
-                    enableOrientation: true,
-                });
+                setTimeout(() => {
+                    if (croppieInstance) {
+                        croppieInstance.destroy();
+                        setCroppieInstance(null);
+                        
+                    }
+                    if (croppieRef.current) {  // Ensure the modal is rendered and the croppieRef is not null
+                        const newCroppie = new Croppie(croppieRef.current, {
+                            viewport: { width: 200, height: 200, type: 'circle' },
+                            boundary: { width: 300, height: 300 },
+                            enableOrientation: true,
+                        });
     
-                newCroppie.bind({ url: event.target.result });
-                setCroppieInstance(newCroppie); // Save the new instance
+                        newCroppie.bind({ url: event.target.result });
+                        setCroppieInstance(newCroppie); // Save the new instance
+                    }
+                }, 50);  // Give time for the modal and ref to be rendered
             };
             reader.readAsDataURL(file);
         }
+        e.target.value = '';
     };
     
     const handleCrop = () => {
@@ -92,7 +104,9 @@ function Register() {
                 setCroppedImage(result);
                 setProfilePicture(result);
                 croppieInstance.destroy(); 
+                setCroppieInstance(null);
             });
+            setShowModalCrop(false);
         }
     };
 

@@ -37,7 +37,7 @@ function Profile() {
     const fetchFavoriteAnimes = async (userId) => {
         try {
             setLoading(true);
-            await delay(300);
+            await delay(350);
             const response = await fetch(`http://localhost:8081/getFavoriteAnimes/${userId}`);
             const data = await response.json();
     
@@ -86,16 +86,28 @@ function Profile() {
                   'Authorization': `Bearer ${token}`
               }
           });
+
+          
+          // This helps update the count to be proper.
+          const followersResponse = await fetch(`http://localhost:8081/getFollowers/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const followingResponse = await fetch(`http://localhost:8081/getFollowing/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
   
           if (!response.ok) {
               throw new Error('Failed to fetch users');
           }
           
           const data = await response.json();
+          const followersData = await followersResponse.json();
+          const followingData = await followingResponse.json();
+
           setUsername(data.username);
           setProfilePicture(data.profilePicture);
-          setFollowingCount(data.following.length);
-          setFollowerCount(data.followers.length);
+          setFollowingCount(followingData.following.length);
+          setFollowerCount(followersData.followers.length);
           setFollowers(data.followers);
           setBio(data.bio);
           setIsPrivate(data.isPrivate);
