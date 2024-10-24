@@ -140,7 +140,7 @@ function Profile() {
                 Cookies.remove('token');
             }
         }
-    }, [token, navigate, users]);
+    }, [token, navigate, loggedUserId]);
 
     if (loading) {
         return <div><Navbar /> <div className="loader"></div></div>;
@@ -165,8 +165,6 @@ function Profile() {
             alert("Please login or register to follow a user.");
             return;
         }
-        
-        const userToFollow = users.find(user => user._id === targetUserId);
         
 
         if (targetUserId.isPrivate) {
@@ -388,7 +386,7 @@ function Profile() {
                                     </button>
                                 ) : requestedUsers.some(user => user._id === userId) ? (
                                     <button className="btn btn-secondary mx-1" disabled>
-                                        Request Sent
+                                        Requested
                                     </button>
                                 ) : (
                                     <button 
