@@ -13,10 +13,15 @@ function BlockedUsers() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 30;
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchBlock = async (userId) => {
     try {
+      //setLoading(true);
+      await delay(300);
         const response = await fetch(`http://localhost:8081/getBlocked/${userId}`, {
             headers: {
                 'Content-Type': 'application/json',
@@ -32,10 +37,12 @@ function BlockedUsers() {
         const blockedUsers = data.blockedUsers || []
         setUsers(blockedUsers);
         console.log(users)
-        
+        setLoading(false);
   
         //console.log(followedUsers)
     } catch (error) {
+      setError(error);
+      setLoading(false);
         console.error('Error fetching data:', error);
     }
 };
@@ -103,6 +110,14 @@ const handleSearchSubmit = (e) => {
     setCurrentPage(1);
     setSearchQuery(searchInput);
 };
+
+if (loading) {
+  return <div><Navbar /> <div className="loader"></div></div>;
+}
+
+if (error) {
+  return <div><Navbar /> Error: {error.message}</div>;
+}
 
 
 const indexOfLastItem = currentPage * itemsPerPage;

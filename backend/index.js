@@ -48,9 +48,9 @@ app.listen(port, () => {
 });
 
 // This deletes the activites every month
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('0 0 1 * *', async () => {
     const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getSeconds() - 1);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     try {
         await client.connect();
@@ -258,20 +258,48 @@ app.get('/activityFeed/:userId', async (req, res) => {
         const followingIDs = user.following || [];
         const userObjectId = new ObjectId(userId);
 
-        // Fetching activities where the user is either following someone or is the target of a follow
+        // Using aggregation to fetch activities with user details
         const activities = await db.collection('activities')
-        .find({
-            $or: [
-                // Fetch follow and follow request activities for the logged-in user
-                { targetUserId: userObjectId, type: { $in: ['follow', 'followRequest'] } },
-                
-                // Fetch 'addFavoriteAnime' activities from users that the logged-in user follows
-                { userId: { $in: followingIDs.map(id => new ObjectId(id)) }, type: 'addFavoriteAnime' }
-            ]
-        })
-        .sort({ timestamp: -1 }) // Sorting by most recent activities
-        .toArray();
-        
+            .aggregate([
+                {
+                    // Check if this is based on whether the user is following or requesting.
+                    $match: {
+                        $or: [
+                            { targetUserId: userObjectId, type: { $in: ['follow', 'followRequest'] } },
+                            { userId: { $in: followingIDs.map(id => new ObjectId(id)) }, type: 'addFavoriteAnime' }
+                        ]
+                    }
+                },
+                {   // Gets the lastest information
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userDetails'
+                    }
+                },
+                {
+                    $unwind: '$userDetails' // Unwind the userDetails array
+                },
+                {
+                    $project: {
+                        userId: 1,
+                        type: 1,
+                        animeId: 1,
+                        animeTitle: 1,
+                        animeImage: 1,
+                        mainName: '$userDetails.username', // Get the username
+                        mainPfp: '$userDetails.profilePicture', // Get the profile picture
+                        timestamp: 1,
+                        targetUserId: 1 // Include targetUserId if needed
+                    }
+                },
+                {
+                    $sort: { timestamp: -1 } // Sort by most recent activities
+                }
+            ])
+            .toArray();
+
         console.log(followingIDs);
         console.log(activities);
 
@@ -559,8 +587,25 @@ app.post('/block/:targetUserId', authMiddleware, async (req, res) => {
 
         const result4 = await db.collection('users').updateOne(
             { _id: new ObjectId(userId) },
-            { $pull: { follower: new ObjectId(targetUserId) } }
+            { $pull: { followers: new ObjectId(targetUserId) } }
         );
+
+        const result5 = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $pull: { pendingRequests: new ObjectId(targetUserId) } }
+        );
+
+        const result6 = await db.collection('users').updateOne(
+            { _id: new ObjectId(targetUserId) },
+            { $pull: { pendingRequests: new ObjectId(userId) } }
+        );
+
+        await db.collection('activities').deleteMany({
+            $or: [
+                { userId: new ObjectId(userId), targetUserId: new ObjectId(targetUserId), type: 'followRequest' },
+                { userId: new ObjectId(targetUserId), targetUserId: new ObjectId(userId), type: 'followRequest' }
+            ]
+        });
 
         // Update the current user's blockedUsers array
         const block = await db.collection('users').updateOne(
