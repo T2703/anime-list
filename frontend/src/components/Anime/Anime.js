@@ -267,7 +267,7 @@ function Anime() {
                 <input
                     type="text"
                     className="form-control"
-                    placeholder="Search for users"
+                    placeholder="Search for animes"
                     onChange={handleSearchChange}
                     value={searchInput}
                 />

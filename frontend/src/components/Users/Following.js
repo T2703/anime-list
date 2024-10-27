@@ -48,30 +48,55 @@ function Following() {
     }
 };
 
-  const fetchFollowing = async (userId) => {
-    try {
-        const response = await fetch(`http://localhost:8081/getFollowing/${userId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+const fetchFollowing = async (userId) => {
+  try {
+    const response = await fetch(`http://localhost:8081/getFollowing/${userId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch users');
-        }
-        
-        const data = await response.json();
-        setUsers(data.following || []);
-        console.log(data)
-        
-        const followingUsers = data.filter(user => user.followers.includes(loggedInUser));
-    
-        setFollowedUsers(followingUsers || []);
-        //console.log(followedUsers)
-    } catch (error) {
-        console.error('Error fetching data:', error);
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
     }
+
+    const data = await response.json();
+
+    // Fetch logged-in user's blocked users if logged in
+    if (loggedInUser) {
+      const userResponse = await fetch(`http://localhost:8081/userById/${loggedInUser}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch logged-in user data');
+      }
+
+      const loggedInUserData = await userResponse.json();
+      const blockedUsers = loggedInUserData.blockedUsers || [];
+
+      // Filter out blocked users from the following list
+      const filteredFollowing = data.following.filter(
+        followingUser => !blockedUsers.includes(followingUser._id)
+      );
+
+      setUsers(filteredFollowing);
+      setFollowedUsers(filteredFollowing);  // assuming `setFollowedUsers` is to be the filtered following list
+    } else {
+      // If there's no logged-in user, just set the unfiltered following list
+      setUsers(data.following || []);
+      setFollowedUsers(data.following || []);
+    }
+
+    console.log(data);
+
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
 };
 
 useEffect(() => {
@@ -88,7 +113,7 @@ useEffect(() => {
         Cookies.remove('token'); 
       }
     }
-}, [token, navigate]);
+}, [token, navigate, loggedInUser]);
 
 const handleSearchChange = (e) => {
     //const inputValue = e.target.value.toLowerCase();

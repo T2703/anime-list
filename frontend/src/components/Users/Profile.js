@@ -125,6 +125,11 @@ function Profile() {
   };
 
     useEffect(() => {
+        let oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getUTCMonth() + 1); 
+        oneMonthAgo.setUTCHours(0, 0, 0, 0);  
+    
+        console.log(`Deleting activities older than: ${oneMonthAgo}`); 
         fetchUsersID(userId);
         fetchFavoriteAnimes(userId);
         if (token) {
@@ -165,18 +170,7 @@ function Profile() {
             alert("Please login or register to follow a user.");
             return;
         }
-        
-
-        if (targetUserId.isPrivate) {
-            alert("A request has been sent.");
-        }
-
-        if (blockedUsers.includes(loggedUserId)) {
-            alert("Can't follow this user.");
-            return;
-        }
-
-      
+    
         try {
             const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
                 method: 'POST',
@@ -185,19 +179,15 @@ function Profile() {
                     'Authorization': `Bearer ${token}`
                 }
             });
-      
+    
             if (response.ok) {
-                setUsers(prevUsers => prevUsers.map(user => {
-                    if (user._id === targetUserId) {
-                        return {
-                            ...user,
-                            pendingRequests: [...(user.pendingRequests || []), loggedUserId] 
-                        };
-                    }
-                    return user;
-                }));
-      
-                console.log('User followed successfully');
+                if (isPrivate) {
+                    setRequestedUsers(prevRequested => [...prevRequested, targetUserId]);
+                    alert("Request sent!");
+                    window.location.reload();
+                } else {
+                    setFollowers(prevFollowers => [...prevFollowers, loggedUserId]);
+                }
             } else {
                 const errorData = await response.json();
                 console.error('Follow user error:', errorData.message || 'Failed to follow user');
@@ -205,33 +195,20 @@ function Profile() {
         } catch (error) {
             console.error('Error following user:', error);
         }
-      };
+    };
 
     const handleUnfollow = async (targetUserId) => {
-        if (!token) {
-            alert("Please login or register to follow a user.");
-            return;
-        }
         try {
             const response = await fetch(`http://localhost:8081/unfollow/${targetUserId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Include the user's JWT token for authentication
+                    'Authorization': `Bearer ${token}`
                 }
             });
     
-            setUsers(prevUsers => {
-                return prevUsers.map(user => {
-                    if (user._id === targetUserId) {
-                        return { ...user, followers: user.followers.filter(id => id !== loggedUserId) };
-                    }
-                    return user;
-                });
-            });
-    
             if (response.ok) {
-                console.log('User unfollowed successfully');
+                setFollowers(prevFollowers => prevFollowers.filter(id => id !== loggedUserId));
             } else {
                 const errorData = await response.json();
                 console.error('Unfollow user error:', errorData.message || 'Failed to unfollow user');
@@ -246,7 +223,6 @@ function Profile() {
             alert("Please login or register to block a user.");
             return;
         }
-        const userToFollow = users.find(user => user._id === targetUserId);
       
         try {
             const response = await fetch(`http://localhost:8081/block/${targetUserId}`, {
@@ -433,21 +409,33 @@ function Profile() {
                                                     <img src={anime.coverImage.large} className="card-img-top" alt={anime.title.romaji} />
                                                     <div className="card-body text-center">
                                                         <button className="btn btn-primary" onClick={() => navigate(`/animeinfo/${anime.id}`)}>View</button>
-                                                        <br></br>
-                                                        {loggedUserFavorites.some(favAnime => favAnime.id === anime.id) ? (
-                                                            <button 
-                                                                className="btn btn-danger mt-2"
-                                                                onClick={() => handleRemoveAnime(anime)}
-                                                            >
-                                                                Unfavorite
-                                                            </button>
+                                                        <br />
+                                                        {isProfileOwner ? (
+                                                            loggedUserFavorites.some(favAnime => favAnime.id === anime.id) ? (
+                                                                <button 
+                                                                    className="btn btn-danger mt-2"
+                                                                    onClick={() => handleRemoveAnime(anime)}
+                                                                >
+                                                                    Unfavorite
+                                                                </button>
+                                                            ) : (
+                                                                <button 
+                                                                    className="btn btn-success mt-2" 
+                                                                    onClick={() => handleFavoriteAnime(anime, loggedUserId)}
+                                                                >
+                                                                    Favorite
+                                                                </button>
+                                                            )
                                                         ) : (
-                                                            <button 
-                                                                className="btn btn-success mt-2" 
-                                                                onClick={() => handleFavoriteAnime(anime, loggedUserId)}
-                                                            >
-                                                                Favorite
-                                                            </button>
+                                                            loggedUserFavorites.some(favAnime => favAnime.id === anime.id) ? (
+                                                                <button className="btn btn-danger mt-2" disabled>
+                                                                    Favorited
+                                                                </button>
+                                                            ) : (
+                                                                <button className="btn btn-success mt-2" disabled>
+                                                                    Not Favorited
+                                                                </button>
+                                                            )
                                                         )}
                                                     </div>
                                                 </div>
