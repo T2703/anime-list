@@ -49,12 +49,14 @@ app.listen(port, () => {
 
 // This deletes the activites every month
 cron.schedule('0 0 1 * *', async () => {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    let oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getUTCMonth() - 1); 
+    oneMonthAgo.setUTCHours(0, 0, 0, 0);  
 
     try {
         await client.connect();
         const db = client.db(dbName);
+        console.log(`Deleting activities older than: ${oneMonthAgo}`); 
 
         const deleteResult = await db.collection('activities').deleteMany({
             timestamp: { $lt: oneMonthAgo }
@@ -394,6 +396,8 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
 app.post('/addFavoriteAnime/:userId', async (req, res) => {
     const { userId } = req.params; // So I can retrieve the userId somehow. 
     const {email, anime } = req.body;
+    const timestamp = new Date();
+    const formattedTimestamp = timestamp.toString();
 
     try {
         await client.connect();
@@ -417,7 +421,7 @@ app.post('/addFavoriteAnime/:userId', async (req, res) => {
             animeImage: anime.coverImage.medium,
             mainName: userIdStuff.username,
             mainPfp: userIdStuff.profilePicture,
-            timestamp: new Date()
+            timestamp: formattedTimestamp
         });
 
         if (result.matchedCount === 0) {
@@ -461,6 +465,8 @@ app.post('/removeAnime', async (req, res) => {
 app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
     const userId = req.user.userId;  // Ensure this matches the token payload structure
     const targetUserId = req.params.targetUserId;
+    const timestamp = new Date();
+    const formattedTimestamp = timestamp.toString();
 
     try {
         if (userId.toString() === targetUserId.toString()) {
@@ -509,7 +515,7 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
                 targetUserId: new ObjectId(targetUserId),
                 mainName: userIdStuff.username,
                 mainPfp: userIdStuff.profilePicture,
-                timestamp: new Date()
+                timestamp: formattedTimestamp
             });
         } else {
             const result1 = await db.collection('users').updateOne(
@@ -528,7 +534,7 @@ app.post('/follow/:targetUserId', authMiddleware, async (req, res) => {
                 targetUserId: new ObjectId(targetUserId),
                 mainName: userIdStuff.username,
                 mainPfp: userIdStuff.profilePicture,
-                timestamp: new Date()
+                timestamp: formattedTimestamp
             });
 
             if (result1.modifiedCount === 0 || result2.modifiedCount === 0) {

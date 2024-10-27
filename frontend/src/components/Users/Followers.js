@@ -48,26 +48,54 @@ function Followers() {
     }
 };
 
-  const fetchFollowers = async (userId) => {
-    try {
-        const response = await fetch(`http://localhost:8081/getFollowers/${userId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+const fetchFollowers = async (userId) => {
+  try {
+    const response = await fetch(`http://localhost:8081/getFollowers/${userId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch users');
-        }
-        
-        const data = await response.json();
-        setUsers(data.followers || []);
-        setFollowing(data.following || []);
-        console.log(data);
-    } catch (error) {
-        console.error('Error fetching data:', error);
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
     }
+
+    const data = await response.json();
+
+    if (loggedInUser) {
+      // Fetch logged-in user's blocked users if logged in
+      const userResponse = await fetch(`http://localhost:8081/userById/${loggedInUser}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch logged-in user data');
+      }
+
+      const loggedInUserData = await userResponse.json();
+      const blockedUsers = loggedInUserData.blockedUsers || [];
+
+      // Filter out blocked users from the followers list
+      const filteredFollowers = data.followers.filter(
+        follower => !blockedUsers.includes(follower._id)
+      );
+
+      setUsers(filteredFollowers);
+      setFollowing(data.following || []);
+    } else {
+      // If there's no logged-in user, set the followers list directly
+      setUsers(data.followers || []);
+      setFollowing(data.following || []);
+    }
+
+    console.log(data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
 };
 
 useEffect(() => {
@@ -85,7 +113,7 @@ useEffect(() => {
       }
     }
 
-}, [token, navigate]);
+}, [token, navigate, loggedInUser]);
 
 const handleSearchChange = (e) => {
     const inputValue = e.target.value.toLowerCase();
@@ -133,9 +161,9 @@ const handleFollow = async (targetUserId) => {
  }
   const userToFollow = users.find(user => user._id === targetUserId);
 
-  if (userToFollow.isPrivate) {
+  /*if (userToFollow.isPrivate) {
       alert("A request has been sent.");
-  }
+  }*/
   
     try {
         const response = await fetch(`http://localhost:8081/follow/${targetUserId}`, {
