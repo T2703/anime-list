@@ -17,6 +17,7 @@ function Settings() {
     const [email, setEmail] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [showModalCrop, setShowModalCrop] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [isPrivate, setIsPrivate] = useState(false);
     const token = Cookies.get('token');
     const croppieRef = useRef(null);
@@ -82,15 +83,18 @@ function Settings() {
             if (croppedImage) {
                 const blob = base64ToBlob(croppedImage);
                 formData.append('profilePic', blob, 'profilePic.png');
+            } else if (profilePicture) {
+                // Use the existing profile picture if no new one is selected
+                formData.append('profilePic', profilePicture);
             }
             formData.append('isPrivate', isPrivate);
-
+    
             const response = await fetch(`http://localhost:8081/updateAccount/${userId}`, {
                 method: 'PUT',
                 headers: { 'authorization': `Bearer ${token}` },
                 body: formData
             });
-
+    
             const data = await response.json();
             if (response.ok) {
                 alert("Your information has been updated.");
@@ -98,7 +102,9 @@ function Settings() {
                 if (newEmail.trim() !== '') localStorage.setItem('email', newEmail);
                 if (newBio.trim() !== '') localStorage.setItem('bio', newBio);
                 if (croppedImage) localStorage.setItem('profilePicture', data.user.profilePicture);
-                setProfilePicture(croppedImage);
+                setProfilePicture(croppedImage || profilePicture); // Set profile picture to either cropped or existing
+                setShowUpdateModal(false);
+                setPassword(""); 
             } else {
                 alert(data.message || 'Error updating profile');
             }
@@ -206,7 +212,7 @@ const handleCrop = () => {
                     <div className="card">
                         <div className="card-body">
                             <h1 className="card-title text-center mb-4">Update Account</h1>
-                            <form onSubmit={handleUpdateUser}>
+                            <form onSubmit={(e) => { e.preventDefault(); setShowUpdateModal(true); }}>
                             <div className="text-center mb-3">
                                         <img
                                             src={croppedImage || profilePicture || "https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"}
@@ -288,7 +294,49 @@ const handleCrop = () => {
                                 </div>
                                 <div className="modal-footer">
                                     <button type="button" className="btn btn-danger" onClick={handleDelete}>Yes</button>
-                                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>No</button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setShowModal(false);
+                                            setPassword(""); 
+                                        }}
+                                    >
+                                        No
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`modal ${showUpdateModal ? "d-block" : "d-none"}`} tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
+                        <div className="modal-dialog" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Confirm Deletion</h5>
+                                    <button type="button" className="btn-close" onClick={() => setShowUpdateModal(false)}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <p>Enter your password to update your account</p>
+                                    <input
+                                        type="password"
+                                        className="form-control mb-3"
+                                        placeholder="Enter your password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-danger" onClick={handleUpdateUser}>Yes</button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setShowUpdateModal(false);
+                                            setPassword(""); 
+                                        }}
+                                    >
+                                        No
+                                    </button>
                                 </div>
                             </div>
                         </div>
