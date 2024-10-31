@@ -911,6 +911,23 @@ app.delete('/deleteAccount/:userId', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        await db.collection('users').updateMany(
+            {
+                $or: [
+                    { pendingRequests: userObjectId },
+                    { followers: userObjectId },
+                    { following: userObjectId }
+                ]
+            },
+            {
+                $pull: {
+                    pendingRequests: userObjectId,
+                    followers: userObjectId,
+                    following: userObjectId
+                }
+            }
+        );
+
         res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
         console.error("Delete user error: ", error);
