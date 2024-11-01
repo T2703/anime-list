@@ -20,6 +20,8 @@ const fs = require('fs');
 const authMiddleware = require('./authMiddleware');
 const multer = require("multer");
 const cron = require('node-cron');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto'); 
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -332,6 +334,10 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
+        if (!isVerified) {
+            return res.status(400).json({ message: "Please check your email and verify your account" });
+        }
+
         const token = jwt.sign(
             {
                 userId: user._id, email: user.email
@@ -371,6 +377,8 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
         // Hash the password before saving it
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+
         // Save the new user to the database
         await db.collection('users').insertOne({
             username,
@@ -383,12 +391,57 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
             pendingRequests: [],
             blockedUsers: [],
             isPrivate: false,
-            password: hashedPassword // Store the hashed password
+            isVerified: false,
+            password: hashedPassword, // Store the hashed password
+            verificationToken: verificationToken 
+        });
+
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const verificationLink = `http://localhost:8081/verify/${verificationToken}`;
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Verify Your Account',
+            html: `<p>Please verify your account by clicking on the link below:</p>
+                   <a href="${verificationLink}">Verify Account</a>`,
         });
 
         res.status(201).json({ message: "User was registered successfully" });
     } catch (error) {
         console.error('Error during registration:', error);
+        res.status(500).json({ message: "A server error occurred" });
+    }
+});
+
+app.get('/verify/:token', async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        await client.connect();
+
+        // Find the user with this token
+        const user = await db.collection('users').findOne({ verificationToken: token });
+
+        if (!user) {
+            return res.status(400).json({ message: "Invalid or expired token" });
+        }
+
+        // Update user to be verified
+        await db.collection('users').updateOne(
+            { verificationToken: token },
+            { $set: { isVerified: true }, $unset: { verificationToken: "" } }
+        );
+
+        res.status(200).json({ message: "Account verified successfully!" });
+    } catch (error) {
+        console.error('Verification error:', error);
         res.status(500).json({ message: "A server error occurred" });
     }
 });

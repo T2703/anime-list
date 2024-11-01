@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "croppie": "^2.6.5"
+    "croppie": "^2.6.5",
+    "crypto": "^1.0.1",
+    "nodemailer": "^6.9.16",
+    "uuidv4": "^6.2.13"
   }
 }
