@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/218f14d1-8fe6-4c2a-b1ab-2ff2a651fb83)# Favorite Anime List
+# Favorite Anime List
 _________________________
 
 A website where you can create your own favorite anime list and share them.
