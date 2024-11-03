@@ -23,10 +23,10 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "install-server": "cd backend && npm install",
-    "start-server": "cd backend && node app.js",
-    "install-client": "cd client && npm install",
-    "build-client": "cd client && npm run build",
-    "start-client": "cd client && npm run start"
+    "start-server": "cd backend && node index.js",
+    "install-client": "cd frontend && npm install",
+    "build-client": "cd frontend && npm run build",
+    "start-client": "cd frontend && npm run start"
   },
   "eslintConfig": {
     "extends": [
