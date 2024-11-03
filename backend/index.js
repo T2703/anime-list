@@ -334,10 +334,6 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
-        if (!isVerified) {
-            return res.status(400).json({ message: "Please check your email and verify your account" });
-        }
-
         const token = jwt.sign(
             {
                 userId: user._id, email: user.email
@@ -377,7 +373,7 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
         // Hash the password before saving it
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const verificationToken = crypto.randomBytes(32).toString('hex');
+        //const verificationToken = crypto.randomBytes(32).toString('hex');
 
         // Save the new user to the database
         await db.collection('users').insertOne({
@@ -391,12 +387,12 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
             pendingRequests: [],
             blockedUsers: [],
             isPrivate: false,
-            isVerified: false,
+            //isVerified: false,
             password: hashedPassword, // Store the hashed password
-            verificationToken: verificationToken 
+            //verificationToken: verificationToken 
         });
 
-        const transporter = nodemailer.createTransport({
+        /*const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
                 user: process.env.EMAIL_USER,
@@ -409,9 +405,9 @@ app.post('/register', upload.single('profilePic'), async (req, res) => {
             from: process.env.EMAIL_USER,
             to: email,
             subject: 'Verify Your Account',
-            html: `<p>Please verify your account by clicking on the link below:</p>
+            html: `<p>Please confirm your account by clicking on the link below:</p>
                    <a href="${verificationLink}">Verify Account</a>`,
-        });
+        });*/
 
         res.status(201).json({ message: "User was registered successfully" });
     } catch (error) {

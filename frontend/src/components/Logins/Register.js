@@ -22,6 +22,11 @@ function Register() {
             return;
         }
 
+        if (password.length < 8) {
+            alert("Passwords is too short it must be greater than or at least 8 characters");
+            return;
+        }
+
         try {
             const formData = new FormData();
             formData.append('username', username);
